@@ -479,7 +479,7 @@
         <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
           <span class="flex items-center gap-1">
             <i data-lucide="sparkles" class="w-3.5 h-3.5 text-teal-400"></i>
-            <span>Real-time slope velocity: $\Delta v = \frac{x_t - x_0}{\Delta t}$</span>
+            <span>Real-time slope velocity: Δv = (x<sub>t</sub> − x<sub>0</sub>) / Δt</span>
           </span>
           <span class="font-mono text-teal-400 text-[10px]">Auto-Synced</span>
         </div>
@@ -562,7 +562,7 @@
 
         <p class="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
           <i data-lucide="info" class="w-3 h-3 text-slate-500"></i>
-          <span>Formula: $EI = \log_{10}(R) - \log_{10}(G)$. Fed directly into Anemia ensemble.</span>
+          <span>Formula: EI = log<sub>10</sub>(R) − log<sub>10</sub>(G). Fed directly into Anemia ensemble.</span>
         </p>
       </div>
 
@@ -698,6 +698,40 @@
 
       </div>
 
+      <!-- FEATURE C: CARDIO-RENAL-METABOLIC (CRM) COMORBIDITY ALERT BANNER -->
+      <div id="crmComorbidityBanner"
+        class="hidden p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/70 via-indigo-950/60 to-slate-900/80 border border-purple-500/40 text-purple-200 text-xs shadow-xl relative overflow-hidden transition-all duration-300">
+        <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-purple-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div class="flex items-start gap-3 relative z-10">
+          <div class="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex-shrink-0 mt-0.5">
+            <i data-lucide="network" class="w-4 h-4 animate-pulse"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-purple-200 text-xs tracking-tight">Multi-System Comorbidity Alert: Cardio-Renal-Metabolic Syndrome Loop Detected</span>
+                <span class="px-1.5 py-0.2 text-[9px] font-mono rounded bg-purple-900/70 text-purple-300 border border-purple-500/40">ORGAN CROSS-TALK</span>
+              </div>
+              <span id="crmPenaltyBadge"
+                class="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm transition-all">
+                +12% Compounding Multi-Organ Risk Penalty
+              </span>
+            </div>
+            <p id="crmMechanismText" class="text-[11px] text-purple-200/90 leading-relaxed font-sans">
+              Hyperglycemia-induced microvascular renal stress + reduced erythropoietin synthesis accelerating subclinical anemia in a self-reinforcing systemic loop.
+            </p>
+            <div class="mt-2 pt-1.5 border-t border-purple-800/40 flex flex-wrap items-center justify-between gap-2 text-[10px] text-purple-300/80">
+              <span class="flex items-center gap-1 font-mono">
+                <i data-lucide="activity" class="w-3 h-3 text-purple-400"></i> Synergistic Multi-Silo Cascade
+              </span>
+              <span id="crmInterventionMitigationText" class="text-teal-300 font-medium">
+                Activate Preventive Interventions below to neutralize compounding cross-talk penalty
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- AUTOMATIC RESPONSIBLE AI SAFETY FALLBACK BANNER -->
       <div id="aiSafetyFallbackBanner"
         class="hidden p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5 shadow-md">
@@ -784,6 +818,98 @@
         </div>
       </div>
 
+      <!-- FEATURE A: "BEND THE CURVE" PREVENTIVE INTERVENTION SIMULATOR -->
+      <div id="preventiveSimulatorPanel" class="glass-card rounded-2xl p-4 shadow-lg border border-teal-500/30">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold text-white tracking-tight">Bend the Curve: Preventive Intervention Simulator</h2>
+                <span class="px-1.5 py-0.2 text-[9px] font-mono rounded bg-teal-950/80 text-teal-300 border border-teal-500/30">WHAT-IF ENGINE</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Model real-time therapeutic slope mitigation and trajectory redirection</p>
+            </div>
+          </div>
+
+          <!-- Adherence Slider in Header -->
+          <div class="flex items-center gap-2.5 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60 shadow-inner">
+            <span class="text-[11px] text-slate-300 font-medium whitespace-nowrap">Protocol Adherence:</span>
+            <input id="adherenceSlider" type="range" min="0" max="100" value="80" step="5"
+              oninput="updateInterventionAdherence(this.value)"
+              class="w-24 sm:w-28 accent-teal-400 cursor-pointer">
+            <span id="adherenceDisplayVal" class="text-xs font-mono font-bold text-teal-300 w-9 text-right">80%</span>
+          </div>
+        </div>
+
+        <!-- 3 Interactive Toggle Pills / Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+
+          <!-- 1. GLYCEMIC CONTROL -->
+          <div id="interventionCardGlycemic" onclick="toggleIntervention('glycemic')"
+            class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/40 cursor-pointer transition relative group flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-300 transition flex items-center gap-1.5">
+                  <input type="checkbox" id="checkGlycemic" class="accent-teal-500 rounded cursor-pointer pointer-events-none">
+                  Glycemic Control
+                </span>
+                <span id="badgeGlycemic"
+                  class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">INACTIVE</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-snug">Low-GI Diet + 150m/wk Zone-2 aerobic training</p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <span id="statGlycemicSlope" class="text-teal-400 font-medium">HbA1c: -0.6%</span>
+              <span class="text-slate-400 font-mono">T2D Risk: -24%</span>
+            </div>
+          </div>
+
+          <!-- 2. ORAL IRON + VITAMIN C -->
+          <div id="interventionCardIron" onclick="toggleIntervention('iron')"
+            class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/40 cursor-pointer transition relative group flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 group-hover:text-rose-300 transition flex items-center gap-1.5">
+                  <input type="checkbox" id="checkIron" class="accent-rose-500 rounded cursor-pointer pointer-events-none">
+                  Oral Iron + Vit C
+                </span>
+                <span id="badgeIron"
+                  class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">INACTIVE</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-snug">Chelated Iron Bisglycinate + 500mg Ascorbate co-factor</p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <span id="statIronSlope" class="text-rose-400 font-medium">Hb: +1.6 g/dL</span>
+              <span class="text-slate-400 font-mono">Anemia: -30%</span>
+            </div>
+          </div>
+
+          <!-- 3. RAAS / NEPHRO-PROTECTIVE HYDRATION & BP -->
+          <div id="interventionCardRenal" onclick="toggleIntervention('renal')"
+            class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/40 cursor-pointer transition relative group flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-200 group-hover:text-cyan-300 transition flex items-center gap-1.5">
+                  <input type="checkbox" id="checkRenal" class="accent-cyan-500 rounded cursor-pointer pointer-events-none">
+                  RAAS / BP Control
+                </span>
+                <span id="badgeRenal"
+                  class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">INACTIVE</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-snug">Nephro-protective hydration, salt restriction &amp; BP target</p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <span id="statRenalSlope" class="text-cyan-400 font-medium">eGFR: +5 mL/min</span>
+              <span class="text-slate-400 font-mono">CKD: -15%</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </section>
 
 
@@ -825,7 +951,7 @@
         </div>
 
         <p class="text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-800 flex items-center justify-between">
-          <span>Base Expected Risk ($E[Y]$): <strong class="text-slate-300 font-mono">14.0%</strong></span>
+          <span>Base Expected Risk (E[Y]): <strong class="text-slate-300 font-mono">14.0%</strong></span>
           <span class="font-mono text-teal-400 text-[10px]">Additive KernelSHAP</span>
         </p>
       </div>
@@ -973,6 +1099,22 @@
         t2d: { probability: 62, level: 'MODERATE', velocity: '+0.12% HbA1c/mo', confidence: 92, fallback: false },
         anemia: { probability: 78, level: 'HIGH RISK', velocity: '-0.22 g/dL/mo', confidence: 89, fallback: true },
         ckd: { probability: 24, level: 'LOW RISK', velocity: '-0.8 mL/min/mo', confidence: 94, fallback: false },
+      },
+
+      // Feature A: Preventive Interventions ("What-If" Simulator)
+      interventions: {
+        adherence: 80, // 0 - 100%
+        glycemic: false,
+        iron: false,
+        renal: false,
+      },
+
+      // Feature C: Cardio-Renal-Metabolic (CRM) Cross-Talk State
+      crm: {
+        active: false,
+        penalty: 0,
+        unmitigatedPenalty: 12,
+        mitigationFraction: 0,
       }
     };
 
@@ -1095,7 +1237,7 @@
       const f_sbp_t2d = Math.max(0, b.sbp.current - 120.0) * 0.25;
 
       const z_t2d = -2.3 + 0.052 * (f_a1c + f_a1c_slope + f_glu + f_bmi + f_sbp_t2d);
-      const prob_t2d = Math.min(98, Math.max(4, Math.round(sigmoid(z_t2d) * 100)));
+      let prob_t2d = Math.min(98, Math.max(4, Math.round(sigmoid(z_t2d) * 100)));
 
       // ----------------------------------------------------
       // TRACK 2: IRON DEFICIENCY ANEMIA (IDA)
@@ -1107,7 +1249,7 @@
       const f_vision = Math.max(0, APP_STATE.vision.pallorScore - 25.0) * 0.85;
 
       const z_anemia = -2.5 + 0.048 * (f_hb + f_fer + f_hb_slope + f_vision);
-      const prob_anemia = Math.min(99, Math.max(3, Math.round(sigmoid(z_anemia) * 100)));
+      let prob_anemia = Math.min(99, Math.max(3, Math.round(sigmoid(z_anemia) * 100)));
 
       // ----------------------------------------------------
       // TRACK 3: EARLY CHRONIC KIDNEY DISEASE (CKD)
@@ -1119,7 +1261,55 @@
       const f_cross_diabetic = Math.max(0, b.hba1c.current - 5.8) * 10.0;
 
       const z_ckd = -2.7 + 0.050 * (f_egfr + f_cr + f_egfr_slope + f_sbp_ckd + f_cross_diabetic);
-      const prob_ckd = Math.min(96, Math.max(4, Math.round(sigmoid(z_ckd) * 100)));
+      let prob_ckd = Math.min(96, Math.max(4, Math.round(sigmoid(z_ckd) * 100)));
+
+      // ----------------------------------------------------
+      // FEATURE C: CARDIO-RENAL-METABOLIC (CRM) CROSS-CHECK
+      // ----------------------------------------------------
+      const elevatedTracksCount = (prob_t2d >= 50 ? 1 : 0) + (prob_anemia >= 50 ? 1 : 0) + (prob_ckd >= 35 ? 1 : 0);
+      const crossVelocityStress = (a1cVel > 0.04 && (egfrVel < -0.8 || hbVel < -0.1));
+      const crmActive = (elevatedTracksCount >= 2) || crossVelocityStress;
+
+      // Calculate Intervention Reductions & CRM Penalty Mitigation
+      const adj = (APP_STATE.interventions.adherence || 0) / 100.0;
+      let activeCount = 0;
+      if (APP_STATE.interventions.glycemic) activeCount++;
+      if (APP_STATE.interventions.iron) activeCount++;
+      if (APP_STATE.interventions.renal) activeCount++;
+
+      // Base CRM penalty: +12% compounding multi-organ risk
+      const crmMitigationFraction = Math.min(1.0, activeCount * 0.35 * adj);
+      const crmEffectivePenalty = crmActive ? Math.round(12 * (1.0 - crmMitigationFraction)) : 0;
+
+      APP_STATE.crm = {
+        active: crmActive,
+        penalty: crmEffectivePenalty,
+        unmitigatedPenalty: 12,
+        mitigationFraction: crmMitigationFraction
+      };
+
+      // Apply compounding organ stress penalty if active
+      if (crmActive && crmEffectivePenalty > 0) {
+        if (prob_t2d >= 40) prob_t2d = Math.min(99, prob_t2d + Math.round(crmEffectivePenalty * 0.5));
+        if (prob_anemia >= 40) prob_anemia = Math.min(99, prob_anemia + Math.round(crmEffectivePenalty * 0.5));
+        if (prob_ckd >= 30) prob_ckd = Math.min(99, prob_ckd + Math.round(crmEffectivePenalty * 0.5));
+      }
+
+      // ----------------------------------------------------
+      // FEATURE A: PREVENTIVE INTERVENTIONS "WHAT-IF" REDUCTIONS
+      // ----------------------------------------------------
+      if (APP_STATE.interventions.glycemic) {
+        // Reduces T2D 6-12m risk score by up to 24%
+        prob_t2d = Math.max(4, Math.round(prob_t2d - (24.0 * adj)));
+      }
+      if (APP_STATE.interventions.iron) {
+        // Reduces Anemia risk score by up to 30%
+        prob_anemia = Math.max(3, Math.round(prob_anemia - (30.0 * adj)));
+      }
+      if (APP_STATE.interventions.renal) {
+        // Reduces CKD risk score by up to 15%
+        prob_ckd = Math.max(4, Math.round(prob_ckd - (15.0 * adj)));
+      }
 
       // Helper to classify level & confidence
       function getTrackMeta(prob, velString, isAccelerated) {
@@ -1156,6 +1346,7 @@
 
       // Update UI components
       updateRiskScorecardsUI();
+      updateCRMComorbidityBanner(crmActive, crmEffectivePenalty, prob_t2d, prob_anemia, prob_ckd, a1cVel, hbVel, egfrVel);
       updateResponsibleAIBanner();
       renderSHAPBars();
       renderActionPlan();
@@ -1291,6 +1482,150 @@
       } else {
         banner.classList.add('hidden');
       }
+    }
+
+    // FEATURE C: Update Cardio-Renal-Metabolic (CRM) Cross-Talk Banner
+    function updateCRMComorbidityBanner(active, penalty, pT2d, pAnemia, pCkd, a1cVel, hbVel, egfrVel) {
+      const banner = document.getElementById('crmComorbidityBanner');
+      const mechanismElem = document.getElementById('crmMechanismText');
+      const penaltyBadge = document.getElementById('crmPenaltyBadge');
+      const mitigationText = document.getElementById('crmInterventionMitigationText');
+      if (!banner) return;
+
+      if (!active) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+
+      // Determine physiological cross-talk text based on active tracks
+      let mechanism = '';
+      if (pT2d >= 45 && pCkd >= 30 && pAnemia >= 45) {
+        mechanism = "Tri-Organ Syndrome Cascade: Hyperglycemia-induced microvascular glomerular sclerosis (eGFR decline) impairs peritubular capillary erythropoietin (EPO) synthesis, accelerating tissue hypoxia and subclinical anemia in a self-reinforcing systemic loop.";
+      } else if (pT2d >= 45 && pCkd >= 30) {
+        mechanism = "Diabetic-Nephropathy Microvascular Axis: Chronic hyperglycemia and advanced glycation end-products (AGEs) drive intraglomerular hyperfiltration, accelerating nephron shear stress and eGFR slope decline.";
+      } else if (pCkd >= 30 && pAnemia >= 45) {
+        mechanism = "Cardio-Renal Anemia Syndrome: Declining functional nephron mass diminishes endogenous erythropoietin (EPO) synthesis, while renal endothelial inflammation causes functional iron entrapment.";
+      } else if (pT2d >= 45 && pAnemia >= 45) {
+        mechanism = "Metabolic-Hematologic Hypoxia Loop: Systemic oxidative stress impairs intestinal iron absorption and mucosal ferritin transport, exacerbating insulin resistance through peripheral tissue hypoxia.";
+      } else {
+        mechanism = "Cardio-Renal-Metabolic Cross-Talk: Rising glycemic drift coupled with downward renal filtering and hematologic velocity triggers compounded multi-organ decompensation.";
+      }
+
+      if (mechanismElem) mechanismElem.textContent = mechanism;
+
+      if (penaltyBadge) {
+        if (penalty > 0) {
+          penaltyBadge.textContent = `+${penalty}% Compounding Multi-Organ Risk Penalty`;
+          penaltyBadge.className = 'px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm animate-pulse';
+        } else {
+          penaltyBadge.textContent = 'Compounding Penalty Defused (0%)';
+          penaltyBadge.className = 'px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm';
+        }
+      }
+
+      if (mitigationText) {
+        const adj = APP_STATE.interventions.adherence;
+        let count = (APP_STATE.interventions.glycemic ? 1 : 0) + (APP_STATE.interventions.iron ? 1 : 0) + (APP_STATE.interventions.renal ? 1 : 0);
+        if (count > 0) {
+          mitigationText.textContent = `Active Interventions (${count}/3 at ${adj}% adherence) mitigating cross-talk penalty`;
+          mitigationText.className = 'text-emerald-300 font-semibold';
+        } else {
+          mitigationText.textContent = 'Activate Preventive Interventions below to neutralize compounding cross-talk penalty';
+          mitigationText.className = 'text-purple-300/90';
+        }
+      }
+    }
+
+    // FEATURE A: Preventive Intervention Simulator Event Handlers & UI Sync
+    function toggleIntervention(type) {
+      APP_STATE.interventions[type] = !APP_STATE.interventions[type];
+      updateInterventionSimulatorUI();
+      recalculateAllRisks();
+    }
+
+    function updateInterventionAdherence(val) {
+      APP_STATE.interventions.adherence = parseInt(val, 10) || 0;
+      const displayElem = document.getElementById('adherenceDisplayVal');
+      if (displayElem) displayElem.textContent = `${APP_STATE.interventions.adherence}%`;
+      updateInterventionSimulatorUI();
+      recalculateAllRisks();
+    }
+
+    function updateInterventionSimulatorUI() {
+      const adj = (APP_STATE.interventions.adherence || 0) / 100.0;
+
+      function updateCard(type, cardId, checkId, badgeId, statId, activeClass, activeBadgeClass, activeText, defaultText, statText) {
+        const active = APP_STATE.interventions[type];
+        const card = document.getElementById(cardId);
+        const check = document.getElementById(checkId);
+        const badge = document.getElementById(badgeId);
+        const stat = document.getElementById(statId);
+
+        if (check) check.checked = active;
+
+        if (active) {
+          if (card) card.className = `p-2.5 rounded-xl border ${activeClass} cursor-pointer transition relative group flex flex-col justify-between shadow-md`;
+          if (badge) {
+            badge.textContent = activeText;
+            badge.className = `text-[9px] font-mono px-1.5 py-0.2 rounded ${activeBadgeClass}`;
+          }
+        } else {
+          if (card) card.className = 'p-2.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/40 cursor-pointer transition relative group flex flex-col justify-between';
+          if (badge) {
+            badge.textContent = defaultText;
+            badge.className = 'text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700';
+          }
+        }
+
+        if (stat) stat.textContent = statText;
+      }
+
+      // Glycemic
+      const a1cDelta = (0.6 * adj).toFixed(2);
+      updateCard(
+        'glycemic',
+        'interventionCardGlycemic',
+        'checkGlycemic',
+        'badgeGlycemic',
+        'statGlycemicSlope',
+        'border-teal-500/60 bg-teal-950/30',
+        'bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold',
+        `ACTIVE (-${a1cDelta}%)`,
+        'INACTIVE',
+        `HbA1c: -${a1cDelta}%`
+      );
+
+      // Iron
+      const hbDelta = (1.6 * adj).toFixed(1);
+      updateCard(
+        'iron',
+        'interventionCardIron',
+        'checkIron',
+        'badgeIron',
+        'statIronSlope',
+        'border-rose-500/60 bg-rose-950/30',
+        'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold',
+        `ACTIVE (+${hbDelta})`,
+        'INACTIVE',
+        `Hb: +${hbDelta} g/dL`
+      );
+
+      // Renal
+      const egfrDelta = (5.0 * adj).toFixed(1);
+      updateCard(
+        'renal',
+        'interventionCardRenal',
+        'checkRenal',
+        'badgeRenal',
+        'statRenalSlope',
+        'border-cyan-500/60 bg-cyan-950/30',
+        'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold',
+        `ACTIVE (+${egfrDelta})`,
+        'INACTIVE',
+        `eGFR: +${egfrDelta} mL/min`
+      );
     }
 
     // Select active risk track (updates SHAP & Chart focus)
@@ -1743,6 +2078,12 @@
       togglePII(); // Refresh banner text
       togglePII(); // Re-toggle to preserve state
 
+      // Reset interventions to baseline so preset starts clean
+      APP_STATE.interventions.glycemic = false;
+      APP_STATE.interventions.iron = false;
+      APP_STATE.interventions.renal = false;
+      updateInterventionSimulatorUI();
+
       // Copy biomarker values
       Object.keys(preset.biomarkers).forEach(key => {
         APP_STATE.biomarkers[key].t12 = preset.biomarkers[key].t12;
@@ -1872,14 +2213,51 @@
       const pVel = calculateSlopeVelocity(pBio.t12, pBio.t6, pBio.current);
       const sVel = calculateSlopeVelocity(sBio.t12, sBio.t6, sBio.current);
 
-      const pForecast = parseFloat((pBio.current + (pVel * 6.0)).toFixed(1));
-      const sForecast = parseFloat((sBio.current + (sVel * 6.0)).toFixed(1));
+      let pForecast = parseFloat((pBio.current + (pVel * 6.0)).toFixed(1));
+      let sForecast = parseFloat((sBio.current + (sVel * 6.0)).toFixed(1));
+
+      // Apply What-If Preventive Interventions to the forecast points:
+      const adj = (APP_STATE.interventions.adherence || 0) / 100.0;
+      let interventionActiveForTab = false;
+      let bendedSummaryText = '';
+
+      if (tab === 'glycemic' && APP_STATE.interventions.glycemic) {
+        interventionActiveForTab = true;
+        const a1cMitigation = 0.6 * adj;
+        const gluMitigation = 18.0 * adj;
+        pForecast = parseFloat((pForecast - a1cMitigation).toFixed(1));
+        sForecast = parseFloat((sForecast - gluMitigation).toFixed(1));
+        bendedSummaryText = ` (Bended -${a1cMitigation.toFixed(2)}% via Intervention)`;
+      } else if (tab === 'hematologic' && APP_STATE.interventions.iron) {
+        interventionActiveForTab = true;
+        const hbBoost = 1.6 * adj;
+        const ferBoost = 25.0 * adj;
+        pForecast = parseFloat((pForecast + hbBoost).toFixed(1));
+        sForecast = parseFloat((sForecast + ferBoost).toFixed(1));
+        bendedSummaryText = ` (Bended +${hbBoost.toFixed(1)} g/dL via Intervention)`;
+      } else if (tab === 'renal' && APP_STATE.interventions.renal) {
+        interventionActiveForTab = true;
+        const egfrBoost = 5.0 * adj;
+        const crMitigation = 0.15 * adj;
+        pForecast = parseFloat((pForecast + egfrBoost).toFixed(1));
+        sForecast = parseFloat((sForecast - crMitigation).toFixed(2));
+        bendedSummaryText = ` (Bended +${egfrBoost.toFixed(1)} mL/min via Intervention)`;
+      }
 
       // Update Header Legends
       document.getElementById('chartPrimaryLegendLabel').textContent = `${pBio.name} (${unitPrimary})`;
       document.getElementById('chartSecondaryLegendLabel').textContent = `${sBio.name} (${unitSecondary})`;
       document.getElementById('chartThresholdLabel').textContent = thresholdLabel;
-      document.getElementById('chartForecastSummaryBadge').textContent = `Projected: ${pForecast} ${unitPrimary} at T+6m`;
+
+      const badgeElem = document.getElementById('chartForecastSummaryBadge');
+      if (badgeElem) {
+        badgeElem.textContent = `Projected: ${pForecast} ${unitPrimary} at T+6m${bendedSummaryText}`;
+        if (interventionActiveForTab) {
+          badgeElem.className = 'px-2 py-0.5 rounded bg-emerald-950/60 font-mono text-[10px] text-emerald-300 border border-emerald-500/40 shadow-sm animate-pulse';
+        } else {
+          badgeElem.className = 'px-2 py-0.5 rounded bg-slate-800 font-mono text-[10px] text-amber-400 border border-slate-700';
+        }
+      }
 
       // Historical Solid Array vs Projected Dashed Array
       // Primary Biomarker (Left Axis)
@@ -1907,16 +2285,16 @@
           pointBackgroundColor: '#14b8a6',
           yAxisID: 'y'
         },
-        // Primary Forecast Dashed Line
+        // Primary Forecast Dashed Line (Bends with Intervention)
         {
-          label: `${pBio.name} AI Forecast`,
+          label: interventionActiveForTab ? `${pBio.name} AI Forecast (Curve Bended)` : `${pBio.name} AI Forecast`,
           data: primaryProjected,
-          borderColor: '#f59e0b',
+          borderColor: interventionActiveForTab ? '#10b981' : '#f59e0b',
           borderDash: [5, 5],
           tension: 0.35,
           borderWidth: 2.5,
           pointRadius: 5,
-          pointBackgroundColor: '#f59e0b',
+          pointBackgroundColor: interventionActiveForTab ? '#10b981' : '#f59e0b',
           yAxisID: 'y'
         },
         // Secondary Historical Line
@@ -2327,6 +2705,7 @@
       // Initialize components
       renderBiomarkerInputs();
       initLongitudinalChart();
+      updateInterventionSimulatorUI();
       loadPatientPreset('A'); // Load default pre-diabetic patient
       lucide.createIcons();
     });
