@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoPulse AI - Longitudinal Multi-Modal Chronic Disease Risk & Preventive Triage</title>
+  <meta name="description" content="Early disease-risk prediction platform leveraging longitudinal lab trend velocity, non-invasive conjunctival vision screening, and explainable AI clinical decision support.">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            clinical: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            slate: {
+              850: '#151f32',
+              950: '#070b14',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Custom Micro-Interactions & Styling */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b1120;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+
+    .glass-card-subtle {
+      background: rgba(30, 41, 59, 0.55);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(13, 148, 136, 0.5);
+    }
+
+    /* Pulse Glow Animations */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.04); }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+
+    @keyframes scanline {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 96%; opacity: 0.8; }
+    }
+    .scan-laser {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #14b8a6, #38bdf8, #14b8a6, transparent);
+      box-shadow: 0 0 12px #14b8a6, 0 0 20px #38bdf8;
+      animation: scanline 2.2s ease-in-out infinite alternate;
+    }
+
+    /* Custom range slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #334155;
+      height: 6px;
+      border-radius: 9999px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0d9488;
+      border: 2px solid #99f6e4;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 8px rgba(13, 148, 136, 0.6);
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      background: #14b8a6;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0d9488;
+    }
+
+    /* Circular Progress Ring */
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    /* Print Stylesheet for Clinical Decision Report */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt !important;
+      }
+      .no-print, header, .nav-guardrail, #ocrDropzone, .preset-bar, #cvScreenerModule, input[type=range], button {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .glass-card, .glass-card-subtle {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        color: #0f172a !important;
+      }
+      .text-white, .text-slate-200, .text-slate-300 {
+        color: #0f172a !important;
+      }
+      .text-slate-400 {
+        color: #475569 !important;
+      }
+      #printReportHeader {
+        display: block !important;
+      }
+      .chart-container {
+        max-height: 280px !important;
+      }
+    }
+    .print-only {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white">
+
+  <!-- PRINT ONLY CLINICAL REPORT HEADER -->
+  <div id="printReportHeader" class="print-only p-6 border-b-2 border-slate-800 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">ChronoPulse AI &bull; Clinical Triage Summary</h1>
+        <p class="text-sm text-slate-600">Longitudinal Multi-Modal Preventive Risk Profiler & SaMD Decision Support</p>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <p id="printTimestamp">Generated: Oct 15, 2026 - 11:30 EST</p>
+        <p id="printToken" class="font-mono font-semibold text-slate-800">Token ID: #CP-8841 (Safe-Harbor Sanitized)</p>
+        <p class="text-teal-700 font-medium">Class II SaMD Decision Support Mode</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 1. TOP NAVIGATION & RESPONSIBLE AI GUARDRAIL -->
+  <!-- ========================================== -->
+  <header class="no-print sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 shadow-xl">
+    <div class="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Logo & Clinical Subtitle -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-cyan-500 shadow-lg shadow-teal-500/20 text-white">
+          <i data-lucide="activity" class="w-6 h-6 animate-pulse-glow"></i>
+          <span class="absolute -top-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
+          </span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-teal-200 via-cyan-100 to-white bg-clip-text text-transparent">ChronoPulse AI</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono tracking-wider font-semibold rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30">PREVENTIVE TRIAGE v2.4</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Longitudinal Biomarker & Multi-Modal Early Risk Profiler</p>
+        </div>
+      </div>
+
+      <!-- Demo Patient Preset Selector (Crucial for Live Demos) -->
+      <div class="flex items-center gap-2 bg-slate-800/70 p-1 rounded-xl border border-slate-700/60 shadow-inner">
+        <span class="text-xs font-semibold text-slate-400 px-2 flex items-center gap-1.5">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-teal-400"></i> Demo Preset:
+        </span>
+        <button id="presetBtnA" onclick="loadPatientPreset('A')" class="px-3 py-1 text-xs font-medium rounded-lg transition-all bg-teal-600 text-white shadow-sm flex items-center gap-1.5 hover:bg-teal-500" title="Rapid HbA1c increase + Renal Stress">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>Patient A <span class="text-[10px] opacity-80">(Pre-Diabetic)</span></span>
+        </button>
+        <button id="presetBtnB" onclick="loadPatientPreset('B')" class="px-3 py-1 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/60 flex items-center gap-1.5" title="Dropping Hemoglobin + High Pallor">
+          <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+          <span>Patient B <span class="text-[10px] opacity-80">(Subclinical Anemia)</span></span>
+        </button>
+        <button id="presetBtnC" onclick="loadPatientPreset('C')" class="px-3 py-1 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/60 flex items-center gap-1.5" title="Stable Healthy Baseline">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Patient C <span class="text-[10px] opacity-80">(Healthy Baseline)</span></span>
+        </button>
+      </div>
+
+      <!-- Top Right Controls: Privacy Toggle, Dual-Persona View Switcher & Export -->
+      <div class="flex items-center gap-2.5">
+        
+        <!-- PII Privacy & De-identification Toggle -->
+        <button id="piiToggleBtn" onclick="togglePII()" class="px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 bg-teal-950/40 border-teal-500/40 text-teal-300 hover:bg-teal-900/50" title="Toggle HIPAA Safe-Harbor De-identification">
+          <i id="piiIcon" data-lucide="shield-check" class="w-3.5 h-3.5 text-teal-400"></i>
+          <span id="piiBadgeText" class="font-mono text-[11px]">PII Scrubber: Active (#CP-8841)</span>
+        </button>
+
+        <!-- Dual Persona Switcher (Clinician vs Patient) -->
+        <div class="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+          <button id="personaClinicianBtn" onclick="setPersona('clinician')" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all bg-teal-600 text-white flex items-center gap-1 shadow-sm">
+            <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i>
+            <span>Clinician</span>
+          </button>
+          <button id="personaPatientBtn" onclick="setPersona('patient')" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span>Patient</span>
+          </button>
+        </div>
+
+        <!-- Print / Export Summary -->
+        <button onclick="window.print()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-all shadow-sm" title="Print/Export 1-Page Clinical Triage Summary">
+          <i data-lucide="printer" class="w-3.5 h-3.5 text-teal-400"></i>
+          <span class="hidden md:inline">Print Triage</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Responsible AI Status Line -->
+    <div class="max-w-[1720px] mx-auto mt-2 pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between text-[11px] text-slate-400 gap-2">
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1 text-emerald-400 font-medium">
+          <i data-lucide="cpu" class="w-3 h-3"></i> Deterministic Gradient-Boosted Ensemble (Slope Velocity + Multi-Modal Vision)
+        </span>
+        <span class="text-slate-600">|</span>
+        <span id="patientDemographicsBanner" class="font-mono text-slate-300">
+          Subject: <strong class="text-teal-300">CP-8841</strong> (Female, 58Y) &bull; Primary Cohort: Longitudinal Health Screen
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="flex items-center gap-1 text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+          <i data-lucide="shield-alert" class="w-3 h-3 text-amber-400"></i>
+          <span>Responsible AI Guardrail: Active Fallback Threshold &lt; 75% Conf.</span>
+        </span>
+        <span class="text-slate-400 font-mono text-[10px]">ISO-14971 Risk Compliant</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN 12-COLUMN DASHBOARD GRID LAYOUT       -->
+  <!-- ========================================== -->
+  <main class="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+    
+    <!-- ======================================================== -->
+    <!-- LEFT COLUMN (Cols 1-4): MULTI-MODAL DATA INTAKE HUB     -->
+    <!-- ======================================================== -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+
+      <!-- MODULE A: SMART LAB REPORT OCR UPLOADER -->
+      <div class="glass-card rounded-2xl p-4 shadow-lg relative overflow-hidden transition-all duration-300">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white tracking-tight">Smart Lab Report OCR Intake</h2>
+              <p class="text-[11px] text-slate-400">PDF / Image Blood Panel Extraction</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-teal-400 border border-slate-700">Auto-Parser</span>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div id="ocrDropzone" onclick="triggerSimulatedOCR()" class="relative border-2 border-dashed border-slate-700 hover:border-teal-500/70 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-900/60 hover:bg-slate-900 group">
+          <div id="ocrLaser" class="hidden scan-laser"></div>
+          
+          <div id="ocrNormalState" class="flex flex-col items-center justify-center gap-1.5 py-1">
+            <div class="w-10 h-10 rounded-full bg-slate-800 group-hover:bg-teal-500/20 text-slate-400 group-hover:text-teal-300 flex items-center justify-center transition-all">
+              <i data-lucide="scan" class="w-5 h-5"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-200">Drop Lab Report PDF / Image here</p>
+            <p class="text-[10px] text-slate-400">or click to simulate instant OCR auto-extraction</p>
+            
+            <div class="flex flex-wrap justify-center gap-1.5 mt-2">
+              <span onclick="event.stopPropagation(); loadSampleReport('quest')" class="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-teal-700 text-slate-300 border border-slate-700 transition">Sample Quest CMP</span>
+              <span onclick="event.stopPropagation(); loadSampleReport('labcorp')" class="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-teal-700 text-slate-300 border border-slate-700 transition">Sample CBC Panel</span>
+            </div>
+          </div>
+
+          <!-- Scanning Active State Overlay -->
+          <div id="ocrScanningState" class="hidden flex-col items-center justify-center py-2 text-center">
+            <div class="flex items-center gap-2 text-teal-400 font-mono text-xs font-semibold animate-pulse">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+              <span id="ocrStatusText">Scanning document contrast & tables...</span>
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
+              <div id="ocrProgressBar" class="bg-gradient-to-r from-teal-500 to-cyan-400 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <p id="ocrConfidenceText" class="text-[10px] font-mono text-slate-400 mt-1">Extracting 8 longitudinal biomarker entities...</p>
+          </div>
+        </div>
+
+        <div id="ocrSuccessBadge" class="hidden mt-2 p-2 rounded-lg bg-teal-950/60 border border-teal-500/30 text-teal-300 text-xs flex items-center justify-between">
+          <span class="flex items-center gap-1.5 font-medium">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-teal-400"></i>
+            <span>Parsed 8 Biomarkers (Confidence: 98.4%)</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">Synced to T0</span>
+        </div>
+      </div>
+
+      <!-- MODULE B: EDITABLE LONGITUDINAL BIOMARKER TABLE & SLIDERS -->
+      <div class="glass-card rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white tracking-tight">Longitudinal Biomarker Profiles</h2>
+              <p class="text-[11px] text-slate-400">Edit any cell to recalculate velocities & risks</p>
+            </div>
+          </div>
+          <button onclick="resetBiomarkersToPreset()" class="text-[11px] text-slate-400 hover:text-teal-300 flex items-center gap-1 transition">
+            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Reset
+          </button>
+        </div>
+
+        <!-- Biomarkers Table Headers -->
+        <div class="grid grid-cols-12 text-[10px] font-semibold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-800 px-1">
+          <div class="col-span-4">Biomarker</div>
+          <div class="col-span-2 text-center">T-12m</div>
+          <div class="col-span-2 text-center">T-6m</div>
+          <div class="col-span-2 text-center text-teal-400">Current</div>
+          <div class="col-span-2 text-right">Velocity</div>
+        </div>
+
+        <!-- Biomarker Interactive Rows Container -->
+        <div id="biomarkerRowsContainer" class="divide-y divide-slate-800/60 mt-1 space-y-1.5">
+          <!-- Dynamically populated via renderBiomarkerInputs() -->
+        </div>
+
+        <div class="mt-3 pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+          <span class="flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-teal-400"></i>
+            <span>Real-time slope velocity: $\Delta v = \frac{x_t - x_0}{\Delta t}$</span>
+          </span>
+          <span class="font-mono text-teal-400 text-[10px]">Auto-Synced</span>
+        </div>
+      </div>
+
+      <!-- MODULE C: NON-INVASIVE COMPUTER VISION ANEMIA SCREENER -->
+      <div id="cvScreenerModule" class="glass-card rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white tracking-tight">Vision Pallor Screener (Anemia)</h2>
+              <p class="text-[11px] text-slate-400">Palpebral Conjunctiva / Nail Bed ROI</p>
+            </div>
+          </div>
+          <span id="cvRiskBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded bg-rose-950/70 text-rose-300 border border-rose-500/30">
+            Pallor: 68%
+          </span>
+        </div>
+
+        <!-- Sample Selector Tabs -->
+        <div class="flex items-center justify-between gap-1.5 mb-2.5">
+          <div class="flex items-center gap-1">
+            <button onclick="loadVisionSample('pale')" id="btnSamplePale" class="px-2 py-1 text-[11px] font-medium rounded bg-rose-900/40 text-rose-300 border border-rose-500/40 hover:bg-rose-900/70 transition">
+              Conjunctiva (Pale)
+            </button>
+            <button onclick="loadVisionSample('healthy')" id="btnSampleHealthy" class="px-2 py-1 text-[11px] font-medium rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+              Conjunctiva (Pink)
+            </button>
+            <button onclick="loadVisionSample('nail')" id="btnSampleNail" class="px-2 py-1 text-[11px] font-medium rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+              Nail Bed
+            </button>
+          </div>
+          <label class="cursor-pointer px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1">
+            <i data-lucide="upload" class="w-3 h-3 text-teal-400"></i>
+            <span>Upload</span>
+            <input type="file" id="cvFileInput" accept="image/*" class="hidden" onchange="handleVisionImageUpload(event)">
+          </label>
+        </div>
+
+        <!-- Canvas Container with Interactive ROI -->
+        <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center select-none">
+          <canvas id="visionCanvas" width="380" height="240" class="w-full h-[180px] object-cover cursor-crosshair"></canvas>
+          <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/75 backdrop-blur-sm text-[10px] font-mono text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+            <span>Drag ROI Box to Sample</span>
+          </div>
+          <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/75 backdrop-blur-sm text-[10px] font-mono text-teal-300">
+            ROI: <span id="roiCoordinatesLabel">80, 110 (60x35)</span>
+          </div>
+        </div>
+
+        <!-- Real-Time Vision Colorimetry Readouts -->
+        <div class="grid grid-cols-3 gap-2 mt-2.5 text-center">
+          <div class="glass-card-subtle p-2 rounded-lg">
+            <span class="block text-[10px] text-slate-400">Erythema Index</span>
+            <span id="erythemaIndexVal" class="text-xs font-mono font-bold text-teal-300">0.084</span>
+          </div>
+          <div class="glass-card-subtle p-2 rounded-lg">
+            <span class="block text-[10px] text-slate-400">Red / Green Ratio</span>
+            <span id="rgRatioVal" class="text-xs font-mono font-bold text-amber-300">1.18</span>
+          </div>
+          <div class="glass-card-subtle p-2 rounded-lg">
+            <span class="block text-[10px] text-slate-400">Vision Pallor Score</span>
+            <span id="visionScoreVal" class="text-xs font-mono font-bold text-rose-400">68% (High)</span>
+          </div>
+        </div>
+        
+        <p class="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+          <i data-lucide="info" class="w-3 h-3 text-slate-500"></i>
+          <span>Formula: $EI = \log_{10}(R) - \log_{10}(G)$. Fed directly into Anemia ensemble.</span>
+        </p>
+      </div>
+
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- CENTER COLUMN (Cols 5-8): RISK SCORECARDS & TRAJECTORY   -->
+    <!-- ======================================================== -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+
+      <!-- 3 DISEASE RISK SCORECARDS (TOP ROW) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        
+        <!-- CARD 1: TYPE 2 DIABETES PROGRESSION -->
+        <div onclick="selectRiskTrack('t2d')" id="cardT2D" class="glass-card rounded-2xl p-3.5 border-2 border-teal-500/60 shadow-lg cursor-pointer hover:border-teal-400 transition relative group">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-white tracking-tight">T2D Progression</span>
+            <span id="t2dBadge" class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">MODERATE</span>
+          </div>
+          
+          <div class="flex items-center justify-between my-2">
+            <!-- Progress Ring -->
+            <div class="relative w-14 h-14 flex items-center justify-center">
+              <svg class="w-14 h-14" viewBox="0 0 36 36">
+                <path class="text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="t2dRing" class="progress-ring__circle text-amber-500" stroke-dasharray="100, 100" stroke-dashoffset="38" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="t2dPercentVal" class="text-base font-extrabold text-white font-mono">62%</span>
+                <span class="text-[8px] text-slate-400 -mt-1">6-12m</span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-[10px] text-slate-400 block">Biomarker Velocity</span>
+              <span id="t2dVelocityBadge" class="text-xs font-mono font-bold text-amber-400 block">+0.12% HbA1c/mo</span>
+              <span id="t2dConfidenceBadge" class="text-[9px] text-slate-400 block mt-1">Conf: 92%</span>
+            </div>
+          </div>
+
+          <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
+            <span>Primary: HbA1c &amp; FPG</span>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-500 group-hover:text-teal-400 transition"></i>
+          </div>
+        </div>
+
+        <!-- CARD 2: IRON DEFICIENCY ANEMIA -->
+        <div onclick="selectRiskTrack('anemia')" id="cardAnemia" class="glass-card rounded-2xl p-3.5 border border-slate-700/60 shadow-lg cursor-pointer hover:border-rose-400 transition relative group">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-white tracking-tight">Anemia (IDA)</span>
+            <span id="anemiaBadge" class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">HIGH RISK</span>
+          </div>
+
+          <div class="flex items-center justify-between my-2">
+            <!-- Progress Ring -->
+            <div class="relative w-14 h-14 flex items-center justify-center">
+              <svg class="w-14 h-14" viewBox="0 0 36 36">
+                <path class="text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="anemiaRing" class="progress-ring__circle text-rose-500" stroke-dasharray="100, 100" stroke-dashoffset="22" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="anemiaPercentVal" class="text-base font-extrabold text-white font-mono">78%</span>
+                <span class="text-[8px] text-slate-400 -mt-1">6-12m</span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-[10px] text-slate-400 block">Biomarker Velocity</span>
+              <span id="anemiaVelocityBadge" class="text-xs font-mono font-bold text-rose-400 block">-0.22 g/dL/mo</span>
+              <span id="anemiaConfidenceBadge" class="text-[9px] text-slate-400 block mt-1">Conf: 89%</span>
+            </div>
+          </div>
+
+          <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
+            <span>Vision + Hb &amp; Ferritin</span>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-500 group-hover:text-rose-400 transition"></i>
+          </div>
+        </div>
+
+        <!-- CARD 3: EARLY CHRONIC KIDNEY DISEASE (CKD) -->
+        <div onclick="selectRiskTrack('ckd')" id="cardCKD" class="glass-card rounded-2xl p-3.5 border border-slate-700/60 shadow-lg cursor-pointer hover:border-cyan-400 transition relative group">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-white tracking-tight">Early CKD Stress</span>
+            <span id="ckdBadge" class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">LOW RISK</span>
+          </div>
+
+          <div class="flex items-center justify-between my-2">
+            <!-- Progress Ring -->
+            <div class="relative w-14 h-14 flex items-center justify-center">
+              <svg class="w-14 h-14" viewBox="0 0 36 36">
+                <path class="text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="ckdRing" class="progress-ring__circle text-emerald-500" stroke-dasharray="100, 100" stroke-dashoffset="76" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="ckdPercentVal" class="text-base font-extrabold text-white font-mono">24%</span>
+                <span class="text-[8px] text-slate-400 -mt-1">6-12m</span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-[10px] text-slate-400 block">Biomarker Velocity</span>
+              <span id="ckdVelocityBadge" class="text-xs font-mono font-bold text-emerald-400 block">-0.8 mL/min/mo</span>
+              <span id="ckdConfidenceBadge" class="text-[9px] text-slate-400 block mt-1">Conf: 94%</span>
+            </div>
+          </div>
+
+          <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
+            <span>Primary: eGFR &amp; Creatinine</span>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-500 group-hover:text-cyan-400 transition"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AUTOMATIC RESPONSIBLE AI SAFETY FALLBACK BANNER -->
+      <div id="aiSafetyFallbackBanner" class="hidden p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5 shadow-md">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5 animate-pulse"></i>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-300">Responsible AI Clinical Safety Triggered</span>
+            <span class="text-[10px] font-mono bg-amber-900/60 px-1.5 py-0.2 rounded border border-amber-600/30">Action Protocol #CP-403</span>
+          </div>
+          <p id="safetyFallbackMsg" class="mt-0.5 text-[11px] text-amber-200/90 leading-relaxed">
+            High disease progression velocity or borderline probability detected. Autonomous recommendation confidence suppressed. Mandating direct clinical specialist evaluation before therapeutic intervention.
+          </p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE LONGITUDINAL TREND & 6-MONTH FORECAST CHART -->
+      <div class="glass-card rounded-2xl p-4 shadow-lg flex-1 flex flex-col">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white tracking-tight">Longitudinal Trajectory &amp; 6-Month AI Forecast</h2>
+              <p class="text-[11px] text-slate-400">Solid line: Historical visits &bull; Dashed line: Projected trajectory</p>
+            </div>
+          </div>
+
+          <!-- Trend Category Tabs -->
+          <div class="flex items-center bg-slate-800/80 p-0.5 rounded-lg border border-slate-700/60 text-xs">
+            <button id="tabGlycemic" onclick="switchChartTab('glycemic')" class="px-2.5 py-1 font-medium rounded-md bg-teal-600 text-white transition">Glycemic</button>
+            <button id="tabHematologic" onclick="switchChartTab('hematologic')" class="px-2.5 py-1 font-medium rounded-md text-slate-400 hover:text-white transition">Hematologic</button>
+            <button id="tabRenal" onclick="switchChartTab('renal')" class="px-2.5 py-1 font-medium rounded-md text-slate-400 hover:text-white transition">Renal</button>
+          </div>
+        </div>
+
+        <!-- Chart Legend & Clinical Boundary Tag -->
+        <div class="flex flex-wrap items-center justify-between text-[11px] px-1 mb-2 text-slate-400">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1.5">
+              <span id="chartPrimaryLegendDot" class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+              <span id="chartPrimaryLegendLabel" class="text-slate-200 font-medium">HbA1c (%)</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span id="chartSecondaryLegendDot" class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+              <span id="chartSecondaryLegendLabel" class="text-slate-300">Fasting Glucose (mg/dL)</span>
+            </span>
+            <span class="flex items-center gap-1.5 text-rose-400 font-medium">
+              <span class="w-3 border-b-2 border-dashed border-rose-500"></span>
+              <span id="chartThresholdLabel">Clinical Threshold: 6.5%</span>
+            </span>
+          </div>
+          <span class="text-[10px] font-mono text-teal-400 bg-teal-950/40 px-2 py-0.5 rounded border border-teal-500/20">
+            Damping Extrapolation: Linear+Decay
+          </span>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="relative w-full h-[270px] sm:h-[300px] flex-1">
+          <canvas id="longitudinalChart"></canvas>
+        </div>
+
+        <div class="mt-2 pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500">Timepoints:</span>
+            <span class="font-mono text-slate-300">T-12m (Oct 2025)</span> &rarr;
+            <span class="font-mono text-slate-300">T-6m (Apr 2026)</span> &rarr;
+            <span class="font-mono text-teal-300 font-bold">Current (Oct 2026)</span> &rarr;
+            <span class="font-mono text-amber-300 font-bold">Forecast (Apr 2027)</span>
+          </div>
+          <span id="chartForecastSummaryBadge" class="px-2 py-0.5 rounded bg-slate-800 font-mono text-[10px] text-amber-400 border border-slate-700">
+            Projected: 6.5% at T+6m
+          </span>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- RIGHT COLUMN (Cols 9-12): EXPLAINABLE AI & ACTION PLAN  -->
+    <!-- ======================================================== -->
+    <section class="lg:col-span-3 flex flex-col gap-4">
+
+      <!-- SHAP FEATURE ATTRIBUTION / RISK DRIVER WATERFALL -->
+      <div class="glass-card rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white tracking-tight">Explainable AI (SHAP Drivers)</h2>
+              <p class="text-[11px] text-slate-400">Risk Contributors for <span id="shapSelectedTrackName" class="text-teal-300 font-semibold">T2D Progression</span></p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-300 border border-slate-700">&phi; Values</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] mb-2 px-1 text-slate-400">
+          <span class="flex items-center gap-1 text-rose-400">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Pushing Risk UP (+)
+          </span>
+          <span class="flex items-center gap-1 text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Pushing Risk DOWN (-)
+          </span>
+        </div>
+
+        <!-- SHAP Diverging Horizontal Bars Container -->
+        <div id="shapBarsContainer" class="space-y-2 mt-2">
+          <!-- Dynamically populated via renderSHAPBars() -->
+        </div>
+
+        <p class="text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-800 flex items-center justify-between">
+          <span>Base Expected Risk ($E[Y]$): <strong class="text-slate-300 font-mono">14.0%</strong></span>
+          <span class="font-mono text-teal-400 text-[10px]">Additive KernelSHAP</span>
+        </p>
+      </div>
+
+      <!-- AUTOMATED CLINICAL DECISION SUPPORT / PATIENT ACTION PLAN -->
+      <div class="glass-card rounded-2xl p-4 shadow-lg flex-1 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-2">
+              <div id="actionPlanIconContainer" class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                <i id="actionPlanIcon" data-lucide="clipboard-check" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 id="actionPlanTitle" class="text-sm font-bold text-white tracking-tight">Clinical Decision Support</h2>
+                <p id="actionPlanSubtitle" class="text-[11px] text-slate-400">Evidence-Based Clinical Guidance</p>
+              </div>
+            </div>
+            <span id="actionPlanPriorityBadge" class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              PRIORITY 2
+            </span>
+          </div>
+
+          <!-- Dynamic Action Items Container -->
+          <div id="actionItemsContainer" class="space-y-2.5 text-xs text-slate-300">
+            <!-- Dynamically populated based on Persona (Clinician vs Patient) & Highest Risk Track -->
+          </div>
+        </div>
+
+        <!-- Clinical Notes / Patient Prep Area -->
+        <div class="mt-4 pt-3 border-t border-slate-800">
+          <div class="flex items-center justify-between mb-1.5">
+            <span id="notesTitle" class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="file-edit" class="w-3.5 h-3.5 text-teal-400"></i> Clinician Triage Notes
+            </span>
+            <span class="text-[10px] text-slate-500 font-mono">EMR Export Ready</span>
+          </div>
+          <textarea id="clinicianNotesInput" rows="2" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 transition resize-none" placeholder="Add custom clinical observations or patient instructions for EHR export..."></textarea>
+          
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <button onclick="downloadTriageJSON()" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-teal-400"></i> Export JSON
+            </button>
+            <button onclick="window.print()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white shadow-md shadow-teal-500/20 flex items-center gap-1.5 transition">
+              <i data-lucide="file-check" class="w-3.5 h-3.5"></i> One-Page Triage Report
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- FOOTER & REGULATORY DISCLAIMER             -->
+  <!-- ========================================== -->
+  <footer class="no-print mt-auto border-t border-slate-800/80 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-400">ChronoPulse AI</span>
+        <span>&bull;</span>
+        <span>Healthcare AI Hackathon: Early Disease-Risk Prediction Track</span>
+      </div>
+      <div class="text-[11px] text-slate-400">
+        <span class="text-amber-400 font-semibold">Investigational SaMD Prototype:</span> For clinical decision support demonstration only. Not a standalone diagnostic device.
+      </div>
+      <div class="font-mono text-[11px] text-slate-500">
+        FastAPI / Flask Hook Ready &bull; Port 5000 Blueprint
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT APPLICATION CORE ENGINE         -->
+  <!-- ========================================== -->
+  <script>
+    /* ========================================================
+       CHRONOPULSE AI - STATE STORE & DATA STRUCTURES
+       ======================================================== */
+    const APP_STATE = {
+      persona: 'clinician', // 'clinician' | 'patient'
+      isPiiMasked: true,
+      activePreset: 'A',
+      selectedRiskTrack: 't2d', // 't2d' | 'anemia' | 'ckd'
+      activeChartTab: 'glycemic', // 'glycemic' | 'hematologic' | 'renal'
+      
+      // Patient Demographics & Token
+      patientInfo: {
+        maskedToken: 'Token #CP-8841',
+        unmaskedName: 'Eleanor Vance',
+        mrn: 'MRN #4819-204',
+        dob: '1968-04-12 (Age 58Y)',
+        gender: 'Female',
+        cohort: 'Longitudinal Metabolic & Preventive Health Cohort'
+      },
+
+      // Longitudinal Biomarkers (T-12, T-6, Current)
+      biomarkers: {
+        hba1c: { name: 'HbA1c', unit: '%', t12: 5.6, t6: 6.0, current: 6.3, min: 4.0, max: 14.0, step: 0.1, ref: '< 5.7%', category: 'glycemic' },
+        glucose: { name: 'Fasting Glucose', unit: 'mg/dL', t12: 94, t6: 108, current: 122, min: 60, max: 350, step: 1, ref: '< 100', category: 'glycemic' },
+        hemoglobin: { name: 'Hemoglobin', unit: 'g/dL', t12: 13.8, t6: 13.2, current: 12.9, min: 6.0, max: 18.0, step: 0.1, ref: '12.0 - 15.5', category: 'hematologic' },
+        ferritin: { name: 'Serum Ferritin', unit: 'ng/mL', t12: 85, t6: 58, current: 42, min: 5, max: 500, step: 1, ref: '30 - 200', category: 'hematologic' },
+        creatinine: { name: 'Serum Creatinine', unit: 'mg/dL', t12: 0.85, t6: 0.98, current: 1.15, min: 0.4, max: 4.0, step: 0.05, ref: '0.6 - 1.1', category: 'renal' },
+        egfr: { name: 'eGFR', unit: 'mL/min', t12: 96, t6: 84, current: 72, min: 10, max: 130, step: 1, ref: '≥ 90', category: 'renal' },
+        sbp: { name: 'Systolic BP', unit: 'mmHg', t12: 124, t6: 130, current: 138, min: 80, max: 220, step: 1, ref: '< 120', category: 'metabolic' },
+        bmi: { name: 'Body Mass Index', unit: 'kg/m²', t12: 27.2, t6: 28.1, current: 29.0, min: 15.0, max: 48.0, step: 0.1, ref: '18.5 - 24.9', category: 'metabolic' },
+      },
+
+      // Computer Vision Eyelid Screener State
+      vision: {
+        activeSample: 'pale', // 'pale' | 'healthy' | 'nail' | 'custom'
+        roi: { x: 90, y: 110, w: 75, h: 45 },
+        isDragging: false,
+        dragStart: { x: 0, y: 0 },
+        erythemaIndex: 0.084,
+        rgRatio: 1.18,
+        pallorScore: 68, // 0 - 100%
+      },
+
+      // Calculated Disease Risks & Confidence
+      risks: {
+        t2d: { probability: 62, level: 'MODERATE', velocity: '+0.12% HbA1c/mo', confidence: 92, fallback: false },
+        anemia: { probability: 78, level: 'HIGH RISK', velocity: '-0.22 g/dL/mo', confidence: 89, fallback: true },
+        ckd: { probability: 24, level: 'LOW RISK', velocity: '-0.8 mL/min/mo', confidence: 94, fallback: false },
+      }
+    };
+
+    /* Demo Presets */
+    const PRESETS = {
+      A: {
+        name: 'Patient A (Pre-Diabetic + Early Renal Stress)',
+        patientInfo: {
+          maskedToken: 'Token #CP-8841',
+          unmaskedName: 'Eleanor Vance',
+          mrn: 'MRN #4819-204',
+          dob: '1968-04-12 (Age 58Y)',
+          gender: 'Female',
+          cohort: 'Longitudinal Metabolic & Early Renal Cohort'
+        },
+        biomarkers: {
+          hba1c: { t12: 5.6, t6: 6.0, current: 6.3 },
+          glucose: { t12: 94, t6: 108, current: 122 },
+          hemoglobin: { t12: 13.8, t6: 13.2, current: 12.9 },
+          ferritin: { t12: 85, t6: 64, current: 48 },
+          creatinine: { t12: 0.85, t6: 0.98, current: 1.18 },
+          egfr: { t12: 96, t6: 84, current: 68 },
+          sbp: { t12: 124, t6: 132, current: 140 },
+          bmi: { t12: 27.2, t6: 28.1, current: 29.4 },
+        },
+        visionSample: 'healthy',
+        selectedRiskTrack: 't2d'
+      },
+      B: {
+        name: 'Patient B (Subclinical Iron-Deficiency Anemia)',
+        patientInfo: {
+          maskedToken: 'Token #CP-4192',
+          unmaskedName: 'Sarah Jenkins',
+          mrn: 'MRN #8194-012',
+          dob: '1992-09-24 (Age 34Y)',
+          gender: 'Female',
+          cohort: 'Outpatient Hematology & Fatigue Screening'
+        },
+        biomarkers: {
+          hba1c: { t12: 5.1, t6: 5.2, current: 5.2 },
+          glucose: { t12: 88, t6: 90, current: 91 },
+          hemoglobin: { t12: 12.8, t6: 11.4, current: 10.2 },
+          ferritin: { t12: 38, t6: 22, current: 11 },
+          creatinine: { t12: 0.72, t6: 0.74, current: 0.75 },
+          egfr: { t12: 108, t6: 105, current: 104 },
+          sbp: { t12: 112, t6: 110, current: 108 },
+          bmi: { t12: 22.4, t6: 22.1, current: 21.8 },
+        },
+        visionSample: 'pale',
+        selectedRiskTrack: 'anemia'
+      },
+      C: {
+        name: 'Patient C (Healthy Baseline)',
+        patientInfo: {
+          maskedToken: 'Token #CP-1029',
+          unmaskedName: 'David Chen',
+          mrn: 'MRN #3049-551',
+          dob: '1984-06-18 (Age 42Y)',
+          gender: 'Male',
+          cohort: 'Annual Occupational Preventive Screen'
+        },
+        biomarkers: {
+          hba1c: { t12: 5.2, t6: 5.2, current: 5.3 },
+          glucose: { t12: 89, t6: 91, current: 92 },
+          hemoglobin: { t12: 15.1, t6: 15.0, current: 14.9 },
+          ferritin: { t12: 145, t6: 140, current: 138 },
+          creatinine: { t12: 0.90, t6: 0.91, current: 0.92 },
+          egfr: { t12: 102, t6: 100, current: 99 },
+          sbp: { t12: 118, t6: 119, current: 120 },
+          bmi: { t12: 23.5, t6: 23.6, current: 23.7 },
+        },
+        visionSample: 'healthy',
+        selectedRiskTrack: 't2d'
+      }
+    };
+
+    /* Chart.js Instance Reference */
+    let longitudinalChartInstance = null;
+
+    /* ========================================================
+       MATHEMATICAL & ML ENGINE (DETERMINISTIC SIMULATION)
+       ======================================================== */
+    
+    // Calculates rate of change (velocity) per month over 12 months & recent 6 months
+    function calculateSlopeVelocity(t12, t6, current) {
+      const v6 = (current - t6) / 6.0;
+      const v12 = (current - t12) / 12.0;
+      // Weighted composite slope: 60% weight to recent 6m trend, 40% to overall 12m
+      return (0.6 * v6) + (0.4 * v12);
+    }
+
+    // Logistic activation function
+    function sigmoid(z) {
+      return 1.0 / (1.0 + Math.exp(-z));
+    }
+
+    // Full deterministic Gradient-Boosted Logistic Risk Ensemble
+    function recalculateAllRisks() {
+      const b = APP_STATE.biomarkers;
+      
+      // 1. Glycemic Velocities
+      const a1cVel = calculateSlopeVelocity(b.hba1c.t12, b.hba1c.t6, b.hba1c.current);
+      const gluVel = calculateSlopeVelocity(b.glucose.t12, b.glucose.t6, b.glucose.current);
+
+      // 2. Hematologic Velocities
+      const hbVel = calculateSlopeVelocity(b.hemoglobin.t12, b.hemoglobin.t6, b.hemoglobin.current);
+      const ferVel = calculateSlopeVelocity(b.ferritin.t12, b.ferritin.t6, b.ferritin.current);
+
+      // 3. Renal Velocities
+      const egfrVel = calculateSlopeVelocity(b.egfr.t12, b.egfr.t6, b.egfr.current);
+      const crVel = calculateSlopeVelocity(b.creatinine.t12, b.creatinine.t6, b.creatinine.current);
+
+      // ----------------------------------------------------
+      // TRACK 1: TYPE 2 DIABETES PROGRESSION (T2D)
+      // ----------------------------------------------------
+      const f_a1c = Math.max(0, b.hba1c.current - 5.4) * 28.0;
+      const f_a1c_slope = Math.max(0, a1cVel * 12.0) * 35.0; // penalty for rising slope
+      const f_glu = Math.max(0, b.glucose.current - 95.0) * 0.32;
+      const f_bmi = Math.max(0, b.bmi.current - 24.5) * 1.5;
+      const f_sbp_t2d = Math.max(0, b.sbp.current - 120.0) * 0.25;
+
+      const z_t2d = -2.3 + 0.052 * (f_a1c + f_a1c_slope + f_glu + f_bmi + f_sbp_t2d);
+      const prob_t2d = Math.min(98, Math.max(4, Math.round(sigmoid(z_t2d) * 100)));
+
+      // ----------------------------------------------------
+      // TRACK 2: IRON DEFICIENCY ANEMIA (IDA)
+      // ----------------------------------------------------
+      const f_hb = Math.max(0, 13.5 - b.hemoglobin.current) * 20.0;
+      const f_fer = Math.max(0, 45.0 - b.ferritin.current) * 1.4;
+      const f_hb_slope = Math.max(0, -hbVel * 12.0) * 26.0; // penalty for dropping Hb
+      // Multi-Modal Computer Vision Input:
+      const f_vision = Math.max(0, APP_STATE.vision.pallorScore - 25.0) * 0.85;
+
+      const z_anemia = -2.5 + 0.048 * (f_hb + f_fer + f_hb_slope + f_vision);
+      const prob_anemia = Math.min(99, Math.max(3, Math.round(sigmoid(z_anemia) * 100)));
+
+      // ----------------------------------------------------
+      // TRACK 3: EARLY CHRONIC KIDNEY DISEASE (CKD)
+      // ----------------------------------------------------
+      const f_egfr = Math.max(0, 90.0 - b.egfr.current) * 1.4;
+      const f_cr = Math.max(0, b.creatinine.current - 0.90) * 45.0;
+      const f_egfr_slope = Math.max(0, -egfrVel * 12.0) * 5.2; // penalty for dropping eGFR
+      const f_sbp_ckd = Math.max(0, b.sbp.current - 125.0) * 0.38;
+      const f_cross_diabetic = Math.max(0, b.hba1c.current - 5.8) * 10.0;
+
+      const z_ckd = -2.7 + 0.050 * (f_egfr + f_cr + f_egfr_slope + f_sbp_ckd + f_cross_diabetic);
+      const prob_ckd = Math.min(96, Math.max(4, Math.round(sigmoid(z_ckd) * 100)));
+
+      // Helper to classify level & confidence
+      function getTrackMeta(prob, velString, isAccelerated) {
+        let level = 'LOW RISK';
+        if (prob >= 70) level = 'HIGH RISK';
+        else if (prob >= 40) level = 'MODERATE';
+
+        // Epistemic uncertainty increases near decision boundaries (45-65%)
+        let conf = Math.round(96 - 0.35 * Math.abs(prob - 55));
+        conf = Math.max(68, Math.min(96, conf));
+
+        // Responsible AI Fallback trigger condition
+        const fallback = (prob >= 70 || conf < 75 || isAccelerated);
+        return { probability: prob, level, velocity: velString, confidence: conf, fallback };
+      }
+
+      APP_STATE.risks.t2d = getTrackMeta(
+        prob_t2d, 
+        `${a1cVel >= 0 ? '+' : ''}${a1cVel.toFixed(2)}% HbA1c/mo`, 
+        a1cVel > 0.08
+      );
+
+      APP_STATE.risks.anemia = getTrackMeta(
+        prob_anemia, 
+        `${hbVel >= 0 ? '+' : ''}${hbVel.toFixed(2)} g/dL/mo`, 
+        hbVel < -0.15
+      );
+
+      APP_STATE.risks.ckd = getTrackMeta(
+        prob_ckd, 
+        `${egfrVel >= 0 ? '+' : ''}${egfrVel.toFixed(1)} mL/min/mo`, 
+        egfrVel < -1.5
+      );
+
+      // Update UI components
+      updateRiskScorecardsUI();
+      updateResponsibleAIBanner();
+      renderSHAPBars();
+      renderActionPlan();
+      updateLongitudinalChart();
+    }
+
+    /* ========================================================
+       UI RENDERING & DOM SYNCHRONIZATION
+       ======================================================== */
+
+    // Render Editable Biomarker Table & Sliders
+    function renderBiomarkerInputs() {
+      const container = document.getElementById('biomarkerRowsContainer');
+      container.innerHTML = '';
+
+      Object.keys(APP_STATE.biomarkers).forEach(key => {
+        const item = APP_STATE.biomarkers[key];
+        const vel = calculateSlopeVelocity(item.t12, item.t6, item.current);
+        const isUp = vel > 0;
+        const velFormatted = `${isUp ? '▲ +' : '▼ '}${Math.abs(vel * 12).toFixed(1)} ${item.unit}/yr`;
+        const velColor = (key === 'hemoglobin' || key === 'egfr' || key === 'ferritin')
+          ? (vel < -0.05 ? 'text-rose-400' : 'text-emerald-400')
+          : (vel > 0.05 ? 'text-rose-400' : 'text-emerald-400');
+
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-12 items-center py-1.5 px-1 hover:bg-slate-800/40 rounded transition text-xs gap-1';
+        row.innerHTML = `
+          <div class="col-span-4">
+            <span class="font-medium text-slate-200 block truncate" title="${item.name} (${item.unit})">${item.name}</span>
+            <span class="text-[10px] text-slate-500 font-mono">Ref: ${item.ref}</span>
+          </div>
+          <div class="col-span-2 text-center">
+            <input type="number" step="${item.step}" min="${item.min}" max="${item.max}" value="${item.t12}" 
+              onchange="updateBiomarkerVal('${key}', 't12', this.value)"
+              class="w-full text-center bg-slate-900/80 border border-slate-700 rounded py-0.5 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="col-span-2 text-center">
+            <input type="number" step="${item.step}" min="${item.min}" max="${item.max}" value="${item.t6}" 
+              onchange="updateBiomarkerVal('${key}', 't6', this.value)"
+              class="w-full text-center bg-slate-900/80 border border-slate-700 rounded py-0.5 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="col-span-2 text-center">
+            <input type="number" step="${item.step}" min="${item.min}" max="${item.max}" value="${item.current}" 
+              onchange="updateBiomarkerVal('${key}', 'current', this.value)"
+              class="w-full text-center bg-teal-950/40 border border-teal-500/50 rounded py-0.5 text-teal-300 font-mono font-bold text-[11px] focus:outline-none focus:border-teal-400">
+          </div>
+          <div class="col-span-2 text-right">
+            <span class="font-mono text-[10px] font-semibold ${velColor} block">${velFormatted}</span>
+          </div>
+          <div class="col-span-12 mt-1">
+            <input type="range" min="${item.min}" max="${item.max}" step="${item.step}" value="${item.current}" 
+              oninput="updateBiomarkerVal('${key}', 'current', this.value)"
+              class="w-full accent-teal-500 cursor-pointer">
+          </div>
+        `;
+        container.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    // Handles biomarker input updates
+    function updateBiomarkerVal(key, timepoint, val) {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed)) {
+        APP_STATE.biomarkers[key][timepoint] = parsed;
+        recalculateAllRisks();
+        // Sync number input and slider
+        renderBiomarkerInputs();
+      }
+    }
+
+    // Update 3 Risk Scorecards UI (Progress Rings, Badges, Velocities)
+    function updateRiskScorecardsUI() {
+      // Helper for updating individual card
+      function syncCard(cardId, ringId, valId, badgeId, velId, confId, data, color) {
+        const ring = document.getElementById(ringId);
+        const valElem = document.getElementById(valId);
+        const badge = document.getElementById(badgeId);
+        const velElem = document.getElementById(velId);
+        const confElem = document.getElementById(confId);
+
+        if (ring) {
+          // Circumference is 100 for path length in our SVG
+          const offset = 100 - data.probability;
+          ring.style.strokeDashoffset = offset;
+          ring.className = `progress-ring__circle ${
+            data.probability >= 70 ? 'text-rose-500' : (data.probability >= 40 ? 'text-amber-500' : 'text-emerald-500')
+          }`;
+        }
+        if (valElem) valElem.textContent = `${data.probability}%`;
+        if (badge) {
+          badge.textContent = data.level;
+          if (data.probability >= 70) {
+            badge.className = 'px-1.5 py-0.5 text-[9px] font-bold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30';
+          } else if (data.probability >= 40) {
+            badge.className = 'px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30';
+          } else {
+            badge.className = 'px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          }
+        }
+        if (velElem) velElem.textContent = data.velocity;
+        if (confElem) confElem.textContent = `Conf: ${data.confidence}%`;
+      }
+
+      syncCard('cardT2D', 't2dRing', 't2dPercentVal', 't2dBadge', 't2dVelocityBadge', 't2dConfidenceBadge', APP_STATE.risks.t2d, 'amber');
+      syncCard('cardAnemia', 'anemiaRing', 'anemiaPercentVal', 'anemiaBadge', 'anemiaVelocityBadge', 'anemiaConfidenceBadge', APP_STATE.risks.anemia, 'rose');
+      syncCard('cardCKD', 'ckdRing', 'ckdPercentVal', 'ckdBadge', 'ckdVelocityBadge', 'ckdConfidenceBadge', APP_STATE.risks.ckd, 'emerald');
+
+      // Highlight currently selected card
+      ['cardT2D', 'cardAnemia', 'cardCKD'].forEach(cId => {
+        const el = document.getElementById(cId);
+        if (el) el.classList.remove('border-teal-500', 'border-2', 'ring-2', 'ring-teal-500/40');
+      });
+
+      const selectedMap = { t2d: 'cardT2D', anemia: 'cardAnemia', ckd: 'cardCKD' };
+      const activeCard = document.getElementById(selectedMap[APP_STATE.selectedRiskTrack]);
+      if (activeCard) {
+        activeCard.classList.add('border-teal-500', 'border-2', 'ring-2', 'ring-teal-500/40');
+      }
+    }
+
+    // Update Responsible AI Guardrail Banner
+    function updateResponsibleAIBanner() {
+      const banner = document.getElementById('aiSafetyFallbackBanner');
+      const msg = document.getElementById('safetyFallbackMsg');
+      const anyFallback = Object.values(APP_STATE.risks).some(r => r.fallback);
+
+      if (anyFallback) {
+        banner.classList.remove('hidden');
+        const highestRisk = Object.entries(APP_STATE.risks).sort((a,b) => b[1].probability - a[1].probability)[0];
+        const trackNames = { t2d: 'Type 2 Diabetes', anemia: 'Iron Deficiency Anemia', ckd: 'Chronic Kidney Disease' };
+        
+        msg.textContent = `High progression velocity detected in ${trackNames[highestRisk[0]]} (Risk: ${highestRisk[1].probability}%, ${highestRisk[1].velocity}). Epistemic threshold triggered. Autonomous clinical safety protocol suppresses fully unverified triage; recommending urgent primary care consultation & diagnostic confirmation.`;
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    // Select active risk track (updates SHAP & Chart focus)
+    function selectRiskTrack(track) {
+      APP_STATE.selectedRiskTrack = track;
+      if (track === 't2d') APP_STATE.activeChartTab = 'glycemic';
+      else if (track === 'anemia') APP_STATE.activeChartTab = 'hematologic';
+      else if (track === 'ckd') APP_STATE.activeChartTab = 'renal';
+
+      syncChartTabButtons();
+      updateRiskScorecardsUI();
+      renderSHAPBars();
+      renderActionPlan();
+      updateLongitudinalChart();
+    }
+
+    // Switch Chart tab
+    function switchChartTab(tab) {
+      APP_STATE.activeChartTab = tab;
+      if (tab === 'glycemic') APP_STATE.selectedRiskTrack = 't2d';
+      else if (tab === 'hematologic') APP_STATE.selectedRiskTrack = 'anemia';
+      else if (tab === 'renal') APP_STATE.selectedRiskTrack = 'ckd';
+
+      syncChartTabButtons();
+      updateRiskScorecardsUI();
+      renderSHAPBars();
+      renderActionPlan();
+      updateLongitudinalChart();
+    }
+
+    function syncChartTabButtons() {
+      const tabs = ['glycemic', 'hematologic', 'renal'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) {
+          if (t === APP_STATE.activeChartTab) {
+            btn.className = 'px-2.5 py-1 font-medium rounded-md bg-teal-600 text-white transition';
+          } else {
+            btn.className = 'px-2.5 py-1 font-medium rounded-md text-slate-400 hover:text-white transition';
+          }
+        }
+      });
+    }
+
+    /* ========================================================
+       SHAP ATTRIBUTION (DIVERGING BARS)
+       ======================================================== */
+    function renderSHAPBars() {
+      const container = document.getElementById('shapBarsContainer');
+      const trackLabel = document.getElementById('shapSelectedTrackName');
+      const track = APP_STATE.selectedRiskTrack;
+      const b = APP_STATE.biomarkers;
+      const isClinician = APP_STATE.persona === 'clinician';
+
+      const names = { t2d: 'Type 2 Diabetes', anemia: 'Iron Deficiency Anemia', ckd: 'Chronic Kidney Disease' };
+      trackLabel.textContent = names[track];
+
+      let shapFeatures = [];
+
+      if (track === 't2d') {
+        const a1cVel = calculateSlopeVelocity(b.hba1c.t12, b.hba1c.t6, b.hba1c.current);
+        shapFeatures = [
+          {
+            feature: isClinician ? 'HbA1c Slope Velocity' : 'Rising Blood Sugar Speed',
+            rawVal: `${a1cVel >= 0 ? '+' : ''}${a1cVel.toFixed(2)} %/mo`,
+            impact: Math.round(a1cVel * 180),
+            direction: a1cVel >= 0 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Current HbA1c Level' : 'Current 3-Month Glucose Avg',
+            rawVal: `${b.hba1c.current}%`,
+            impact: Math.round((b.hba1c.current - 5.5) * 22),
+            direction: b.hba1c.current > 5.6 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Fasting Plasma Glucose' : 'Morning Fasting Sugar',
+            rawVal: `${b.glucose.current} mg/dL`,
+            impact: Math.round((b.glucose.current - 98) * 0.28),
+            direction: b.glucose.current > 99 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Body Mass Index (BMI)' : 'Weight & Metabolic Factor',
+            rawVal: `${b.bmi.current} kg/m²`,
+            impact: Math.round((b.bmi.current - 24.5) * 1.8),
+            direction: b.bmi.current > 25.0 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Renal eGFR Reserve' : 'Kidney Function Stability',
+            rawVal: `${b.egfr.current} mL/min`,
+            impact: Math.round((b.egfr.current - 90) * 0.35),
+            direction: b.egfr.current < 90 ? 1 : -1
+          }
+        ];
+      } else if (track === 'anemia') {
+        const hbVel = calculateSlopeVelocity(b.hemoglobin.t12, b.hemoglobin.t6, b.hemoglobin.current);
+        const pallor = APP_STATE.vision.pallorScore;
+        shapFeatures = [
+          {
+            feature: isClinician ? 'Hemoglobin Rate of Loss' : 'Drop in Red Blood Cells',
+            rawVal: `${hbVel.toFixed(2)} g/dL/mo`,
+            impact: Math.round(-hbVel * 110),
+            direction: hbVel < 0 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Conjunctival Vision Pallor' : 'Eyelid Color Camera Score',
+            rawVal: `${pallor}% Pallor Index`,
+            impact: Math.round((pallor - 30) * 0.45),
+            direction: pallor > 35 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Serum Ferritin Depletion' : 'Iron Stores Level',
+            rawVal: `${b.ferritin.current} ng/mL`,
+            impact: Math.round((35 - b.ferritin.current) * 0.65),
+            direction: b.ferritin.current < 30 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Current Hemoglobin Tier' : 'Current Oxygen Carrier Level',
+            rawVal: `${b.hemoglobin.current} g/dL`,
+            impact: Math.round((13.0 - b.hemoglobin.current) * 8.5),
+            direction: b.hemoglobin.current < 12.5 ? 1 : -1
+          }
+        ];
+      } else { // CKD
+        const egfrVel = calculateSlopeVelocity(b.egfr.t12, b.egfr.t6, b.egfr.current);
+        shapFeatures = [
+          {
+            feature: isClinician ? 'eGFR Annual Decline Rate' : 'Kidney Filtration Slowdown',
+            rawVal: `${egfrVel.toFixed(1)} mL/min/mo`,
+            impact: Math.round(-egfrVel * 14),
+            direction: egfrVel < 0 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Current Serum Creatinine' : 'Blood Creatinine Waste Filter',
+            rawVal: `${b.creatinine.current} mg/dL`,
+            impact: Math.round((b.creatinine.current - 0.95) * 35),
+            direction: b.creatinine.current > 1.0 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Systolic Vascular Pressure' : 'Arterial Blood Pressure',
+            rawVal: `${b.sbp.current} mmHg`,
+            impact: Math.round((b.sbp.current - 125) * 0.38),
+            direction: b.sbp.current > 125 ? 1 : -1
+          },
+          {
+            feature: isClinician ? 'Diabetic Glomerular Stress' : 'Blood Sugar Impact on Kidneys',
+            rawVal: `HbA1c ${b.hba1c.current}%`,
+            impact: Math.round((b.hba1c.current - 5.8) * 12),
+            direction: b.hba1c.current > 5.8 ? 1 : -1
+          }
+        ];
+      }
+
+      // Sort by absolute impact descending
+      shapFeatures.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+
+      container.innerHTML = '';
+      shapFeatures.forEach(item => {
+        const isPushingUp = item.impact > 0;
+        const absImpact = Math.min(45, Math.abs(item.impact));
+        const barWidth = Math.max(8, absImpact * 2.2);
+
+        const row = document.createElement('div');
+        row.className = 'glass-card-subtle p-2 rounded-xl text-xs flex flex-col gap-1';
+        row.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-slate-200 text-[11px] truncate" title="${item.feature}">${item.feature}</span>
+            <div class="flex items-center gap-1.5 font-mono text-[10px]">
+              <span class="text-slate-400 font-normal">(${item.rawVal})</span>
+              <span class="font-bold ${isPushingUp ? 'text-rose-400' : 'text-emerald-400'}">
+                ${isPushingUp ? '+' : ''}${item.impact}%
+              </span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden flex">
+            <div class="w-1/2 flex justify-end">
+              ${!isPushingUp ? `<div class="bg-gradient-to-l from-emerald-500 to-teal-400 h-full rounded-l-full" style="width: ${barWidth}%"></div>` : ''}
+            </div>
+            <div class="w-0.5 bg-slate-600 h-full"></div>
+            <div class="w-1/2 flex justify-start">
+              ${isPushingUp ? `<div class="bg-gradient-to-r from-rose-500 to-red-400 h-full rounded-r-full" style="width: ${barWidth}%"></div>` : ''}
+            </div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /* ========================================================
+       CLINICAL DECISION SUPPORT & PATIENT ACTION PLAN
+       ======================================================== */
+    function renderActionPlan() {
+      const title = document.getElementById('actionPlanTitle');
+      const subtitle = document.getElementById('actionPlanSubtitle');
+      const priorityBadge = document.getElementById('actionPlanPriorityBadge');
+      const itemsContainer = document.getElementById('actionItemsContainer');
+      const notesTitle = document.getElementById('notesTitle');
+      const notesInput = document.getElementById('clinicianNotesInput');
+
+      const isClinician = APP_STATE.persona === 'clinician';
+      const track = APP_STATE.selectedRiskTrack;
+      const risk = APP_STATE.risks[track];
+
+      // Update Header Text based on Persona
+      if (isClinician) {
+        title.textContent = 'Clinical Decision Support (CDS)';
+        subtitle.textContent = `Evidence-Based Diagnostic & Triage Pathway (${track.toUpperCase()})`;
+        notesTitle.innerHTML = '<i data-lucide="file-edit" class="w-3.5 h-3.5 text-teal-400"></i> Clinician Triage Notes (EHR Export)';
+        notesInput.placeholder = 'Add clinical notes, differential diagnosis, or therapy plan...';
+      } else {
+        title.textContent = 'Your Personal Preventive Care Plan';
+        subtitle.textContent = 'Everyday Steps & Questions for Your Next Doctor Visit';
+        notesTitle.innerHTML = '<i data-lucide="help-circle" class="w-3.5 h-3.5 text-teal-400"></i> Questions to Ask Your Doctor';
+        notesInput.placeholder = 'Jot down personal symptoms, questions, or reminders for your appointment...';
+      }
+
+      // Priority Badge
+      if (risk.probability >= 70) {
+        priorityBadge.textContent = 'URGENT TIER 1';
+        priorityBadge.className = 'px-2 py-0.5 text-[10px] font-bold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30';
+      } else if (risk.probability >= 40) {
+        priorityBadge.textContent = 'ACTION TIER 2';
+        priorityBadge.className = 'px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      } else {
+        priorityBadge.textContent = 'ROUTINE TIER 3';
+        priorityBadge.className = 'px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      }
+
+      itemsContainer.innerHTML = '';
+
+      if (isClinician) {
+        // CLINICIAN SPECIFIC ACTIONS & ICD-10 GUIDANCE
+        let clinicianActions = [];
+        if (track === 't2d') {
+          clinicianActions = [
+            {
+              icon: 'clipboard-list',
+              code: 'ICD-10 R73.03',
+              title: 'Order Confirmatory Glycemic Workup',
+              detail: 'Schedule 2-hour 75g Oral Glucose Tolerance Test (OGTT) and repeat HbA1c in 90 days. Screen for microvascular markers (spot urine ACR).'
+            },
+            {
+              icon: 'pill',
+              code: 'ADA 2024 Standards',
+              title: 'Pharmacotherapy & Lifestyle Triage',
+              detail: 'Initiate intensive medical nutrition therapy (MNT). Consider Metformin 500mg ER daily if BMI > 35 or rapid slope velocity persists.'
+            },
+            {
+              icon: 'activity',
+              code: 'Remote CGM',
+              title: 'Continuous Glucose Sensor Pilot',
+              detail: 'Prescribe 14-day intermittent continuous glucose monitoring (CGM) to evaluate post-prandial glycemic excursions and glycemic variability.'
+            }
+          ];
+        } else if (track === 'anemia') {
+          clinicianActions = [
+            {
+              icon: 'clipboard-list',
+              code: 'ICD-10 D50.9',
+              title: 'Comprehensive Iron Binding & Smear Panel',
+              detail: 'Order Serum Iron, Total Iron Binding Capacity (TIBC), Transferrin Saturation Index (TSAT), and Reticulocyte count.'
+            },
+            {
+              icon: 'search',
+              code: 'GI Etiology Rule-Out',
+              title: 'Occult Blood Screening & Endoscopy Review',
+              detail: 'Fecal Immunochemical Test (FIT) indicated to rule out occult gastrointestinal blood loss given steady hemoglobin drop over 12 months.'
+            },
+            {
+              icon: 'pill',
+              code: 'Oral / IV Replenishment',
+              title: 'Targeted Iron Repletion Protocol',
+              detail: 'Ferrous sulfate 325mg PO alternate-day dosing with ascorbic acid (Vit C 500mg) for optimal hepcidin dynamics and absorption.'
+            }
+          ];
+        } else { // CKD
+          clinicianActions = [
+            {
+              icon: 'clipboard-list',
+              code: 'ICD-10 N18.2',
+              title: 'Quantify Albuminuria & Glomerular Damage',
+              detail: 'Order First-Morning Spot Urine Albumin-to-Creatinine Ratio (uACR) to stage renal damage according to KDIGO heatmaps.'
+            },
+            {
+              icon: 'heart',
+              code: 'Nephroprotective Protocol',
+              title: 'Renal Hemodynamic Stabilization',
+              detail: 'Tighten BP target to < 130/80 mmHg. Evaluate ACEi/ARB or SGLT2-inhibitor initiation for renal microvascular preservation.'
+            },
+            {
+              icon: 'alert-circle',
+              code: 'Medication Safety Review',
+              title: 'Deprescribe Nephrotoxic Agents',
+              detail: 'Instruct patient to avoid OTC NSAIDs (ibuprofen/naproxen); adjust dosages of renally-cleared maintenance pharmaceuticals.'
+            }
+          ];
+        }
+
+        clinicianActions.forEach(act => {
+          const card = document.createElement('div');
+          card.className = 'glass-card-subtle p-2.5 rounded-xl border-l-2 border-teal-500';
+          card.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-white text-[11px] flex items-center gap-1.5">
+                <i data-lucide="${act.icon}" class="w-3.5 h-3.5 text-teal-400"></i> ${act.title}
+              </span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-teal-300 border border-slate-700">${act.code}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">${act.detail}</p>
+          `;
+          itemsContainer.appendChild(card);
+        });
+
+      } else {
+        // PATIENT FRIENDLY LIFESTYLE & DOCTOR CONVERSATION GUIDES
+        let patientActions = [];
+        if (track === 't2d') {
+          patientActions = [
+            {
+              icon: 'heart-pulse',
+              badge: 'Daily Habit',
+              title: '15-Minute Post-Meal Stroll',
+              detail: 'Walking for just 10–15 minutes right after your largest meal acts as a natural glucose sponge, lowering blood sugar spikes by up to 22%.'
+            },
+            {
+              icon: 'utensils',
+              badge: 'Nutrition Swap',
+              title: 'Fill Half Your Plate with Fiber',
+              detail: 'Switch white rice and bread for high-fiber beans, leafy greens, and oats. Fiber slows sugar absorption so your body handles it with ease.'
+            },
+            {
+              icon: 'message-square',
+              badge: 'Ask Your Doctor',
+              title: 'Key Question for Your Next Visit',
+              detail: '"My ChronoPulse report shows my blood sugar creeping up +0.12% per month. Can we check my HbA1c again in 3 months to see if my dietary changes worked?"'
+            }
+          ];
+        } else if (track === 'anemia') {
+          patientActions = [
+            {
+              icon: 'sun',
+              badge: 'Vital Energy',
+              title: 'Boost Iron with Vitamin C',
+              detail: 'When eating iron-rich foods (beans, lentils, spinach, or lean meat), pair them with citrus or bell peppers. Vitamin C triples iron absorption!'
+            },
+            {
+              icon: 'coffee',
+              badge: 'Timing Tip',
+              title: 'Hold Coffee & Tea Around Meals',
+              detail: 'Tannins in coffee and tea block up to 60% of iron absorption. Wait 60 minutes after eating before having your favorite tea or coffee.'
+            },
+            {
+              icon: 'message-square',
+              badge: 'Ask Your Doctor',
+              title: 'Key Question for Your Next Visit',
+              detail: '"The eye scan and blood trend both show low iron reserves. Should we check a full ferritin and iron saturation panel?"'
+            }
+          ];
+        } else { // CKD
+          patientActions = [
+            {
+              icon: 'droplets',
+              badge: 'Hydration',
+              title: 'Consistent Daily Water Intake',
+              detail: 'Aim for 7 to 8 glasses of pure water throughout the day. Steady hydration helps your kidneys effortlessly flush away daily metabolic waste.'
+            },
+            {
+              icon: 'shield-alert',
+              badge: 'Medicine Warning',
+              title: 'Limit OTC Painkillers (NSAIDs)',
+              detail: 'Pain pills like Ibuprofen, Advil, or Aleve can stress delicate kidney filtering units. Ask your pharmacist about kidney-safe alternatives.'
+            },
+            {
+              icon: 'message-square',
+              badge: 'Ask Your Doctor',
+              title: 'Key Question for Your Next Visit',
+              detail: '"My eGFR filtering rate has softened slightly over the past year. Can we run a simple urine ACR test to make sure my kidneys remain protected?"'
+            }
+          ];
+        }
+
+        patientActions.forEach(act => {
+          const card = document.createElement('div');
+          card.className = 'glass-card-subtle p-2.5 rounded-xl border-l-2 border-cyan-400';
+          card.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-white text-[11px] flex items-center gap-1.5">
+                <i data-lucide="${act.icon}" class="w-3.5 h-3.5 text-cyan-400"></i> ${act.title}
+              </span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">${act.badge}</span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">${act.detail}</p>
+          `;
+          itemsContainer.appendChild(card);
+        });
+      }
+
+      lucide.createIcons();
+    }
+
+    /* ========================================================
+       PERSONA SWITCHER & PII PRIVACY SHIELD
+       ======================================================== */
+    function setPersona(persona) {
+      APP_STATE.persona = persona;
+      const clinicianBtn = document.getElementById('personaClinicianBtn');
+      const patientBtn = document.getElementById('personaPatientBtn');
+
+      if (persona === 'clinician') {
+        clinicianBtn.className = 'px-2.5 py-1 text-xs font-semibold rounded-md transition-all bg-teal-600 text-white flex items-center gap-1 shadow-sm';
+        patientBtn.className = 'px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1';
+      } else {
+        patientBtn.className = 'px-2.5 py-1 text-xs font-semibold rounded-md transition-all bg-teal-600 text-white flex items-center gap-1 shadow-sm';
+        clinicianBtn.className = 'px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1';
+      }
+
+      renderSHAPBars();
+      renderActionPlan();
+    }
+
+    function togglePII() {
+      APP_STATE.isPiiMasked = !APP_STATE.isPiiMasked;
+      const badgeText = document.getElementById('piiBadgeText');
+      const piiBtn = document.getElementById('piiToggleBtn');
+      const demoBanner = document.getElementById('patientDemographicsBanner');
+      const printToken = document.getElementById('printToken');
+
+      if (APP_STATE.isPiiMasked) {
+        badgeText.textContent = `PII Scrubber: Active (${APP_STATE.patientInfo.maskedToken})`;
+        piiBtn.className = 'px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 bg-teal-950/40 border-teal-500/40 text-teal-300 hover:bg-teal-900/50';
+        demoBanner.innerHTML = `Subject: <strong class="text-teal-300">${APP_STATE.patientInfo.maskedToken}</strong> (${APP_STATE.patientInfo.gender}, 58Y) &bull; Primary Cohort: Longitudinal Health Screen`;
+        printToken.textContent = `Token ID: ${APP_STATE.patientInfo.maskedToken} (HIPAA Safe-Harbor Sanitized)`;
+      } else {
+        badgeText.textContent = `PII Unmasked: ${APP_STATE.patientInfo.unmaskedName}`;
+        piiBtn.className = 'px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 bg-amber-950/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/50';
+        demoBanner.innerHTML = `Patient: <strong class="text-amber-300">${APP_STATE.patientInfo.unmaskedName}</strong> (${APP_STATE.patientInfo.dob}, ${APP_STATE.patientInfo.mrn})`;
+        printToken.textContent = `Patient: ${APP_STATE.patientInfo.unmaskedName} | MRN: ${APP_STATE.patientInfo.mrn}`;
+      }
+      lucide.createIcons();
+    }
+
+    /* ========================================================
+       DEMO PRESET LOADER
+       ======================================================== */
+    function loadPatientPreset(presetKey) {
+      APP_STATE.activePreset = presetKey;
+      const preset = PRESETS[presetKey];
+
+      // Update Demographics
+      APP_STATE.patientInfo = { ...preset.patientInfo };
+      togglePII(); // Refresh banner text
+      togglePII(); // Re-toggle to preserve state
+
+      // Copy biomarker values
+      Object.keys(preset.biomarkers).forEach(key => {
+        APP_STATE.biomarkers[key].t12 = preset.biomarkers[key].t12;
+        APP_STATE.biomarkers[key].t6 = preset.biomarkers[key].t6;
+        APP_STATE.biomarkers[key].current = preset.biomarkers[key].current;
+      });
+
+      // Update preset buttons styling
+      ['A', 'B', 'C'].forEach(p => {
+        const btn = document.getElementById(`presetBtn${p}`);
+        if (p === presetKey) {
+          btn.className = 'px-3 py-1 text-xs font-medium rounded-lg transition-all bg-teal-600 text-white shadow-sm flex items-center gap-1.5 hover:bg-teal-500';
+        } else {
+          btn.className = 'px-3 py-1 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/60 flex items-center gap-1.5';
+        }
+      });
+
+      // Load matching vision sample
+      loadVisionSample(preset.visionSample);
+
+      // Select recommended risk track
+      selectRiskTrack(preset.selectedRiskTrack);
+
+      // Re-render inputs & recalculate
+      renderBiomarkerInputs();
+      recalculateAllRisks();
+    }
+
+    function resetBiomarkersToPreset() {
+      loadPatientPreset(APP_STATE.activePreset);
+    }
+
+    /* ========================================================
+       INTERACTIVE LONGITUDINAL & FORECAST CHART (CHART.JS)
+       ======================================================== */
+    function initLongitudinalChart() {
+      const ctx = document.getElementById('longitudinalChart').getContext('2d');
+
+      longitudinalChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['T-12m (Oct 25)', 'T-6m (Apr 26)', 'Current (Oct 26)', 'T+6m (Projected)'],
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 650, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#38bdf8',
+              bodyColor: '#f1f5f9',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 10,
+              boxPadding: 4,
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) label += ': ';
+                  if (context.parsed.y !== null) label += context.parsed.y;
+                  if (context.dataIndex === 3) label += ' (AI Forecast)';
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
+            },
+            y: {
+              position: 'left',
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
+            },
+            y1: {
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#38bdf8', font: { family: 'Inter', size: 11 } }
+            }
+          }
+        }
+      });
+      updateLongitudinalChart();
+    }
+
+    function updateLongitudinalChart() {
+      if (!longitudinalChartInstance) return;
+
+      const tab = APP_STATE.activeChartTab;
+      const b = APP_STATE.biomarkers;
+
+      let primaryKey, secondaryKey, primaryThreshold, thresholdLabel, unitPrimary, unitSecondary;
+
+      if (tab === 'glycemic') {
+        primaryKey = 'hba1c';
+        secondaryKey = 'glucose';
+        primaryThreshold = 6.5; // Diabetic cutoff
+        thresholdLabel = 'Diabetic Threshold: 6.5%';
+        unitPrimary = '%';
+        unitSecondary = 'mg/dL';
+      } else if (tab === 'hematologic') {
+        primaryKey = 'hemoglobin';
+        secondaryKey = 'ferritin';
+        primaryThreshold = 12.0; // Anemia cutoff
+        thresholdLabel = 'Anemia Threshold: 12.0 g/dL';
+        unitPrimary = 'g/dL';
+        unitSecondary = 'ng/mL';
+      } else { // renal
+        primaryKey = 'egfr';
+        secondaryKey = 'creatinine';
+        primaryThreshold = 60.0; // Stage 3 CKD cutoff
+        thresholdLabel = 'CKD Stage 3 Cutoff: 60 mL/min';
+        unitPrimary = 'mL/min';
+        unitSecondary = 'mg/dL';
+      }
+
+      const pBio = b[primaryKey];
+      const sBio = b[secondaryKey];
+
+      // Calculate 6-month projected forecast using linear damping extrapolation
+      const pVel = calculateSlopeVelocity(pBio.t12, pBio.t6, pBio.current);
+      const sVel = calculateSlopeVelocity(sBio.t12, sBio.t6, sBio.current);
+
+      const pForecast = parseFloat((pBio.current + (pVel * 6.0)).toFixed(1));
+      const sForecast = parseFloat((sBio.current + (sVel * 6.0)).toFixed(1));
+
+      // Update Header Legends
+      document.getElementById('chartPrimaryLegendLabel').textContent = `${pBio.name} (${unitPrimary})`;
+      document.getElementById('chartSecondaryLegendLabel').textContent = `${sBio.name} (${unitSecondary})`;
+      document.getElementById('chartThresholdLabel').textContent = thresholdLabel;
+      document.getElementById('chartForecastSummaryBadge').textContent = `Projected: ${pForecast} ${unitPrimary} at T+6m`;
+
+      // Historical Solid Array vs Projected Dashed Array
+      // Primary Biomarker (Left Axis)
+      const primaryHistorical = [pBio.t12, pBio.t6, pBio.current, null];
+      const primaryProjected = [null, null, pBio.current, pForecast];
+
+      // Secondary Biomarker (Right Axis)
+      const secondaryHistorical = [sBio.t12, sBio.t6, sBio.current, null];
+      const secondaryProjected = [null, null, sBio.current, sForecast];
+
+      // Threshold reference line across all 4 points
+      const thresholdLine = [primaryThreshold, primaryThreshold, primaryThreshold, primaryThreshold];
+
+      longitudinalChartInstance.data.datasets = [
+        // Primary Historical Solid Line
+        {
+          label: pBio.name,
+          data: primaryHistorical,
+          borderColor: '#14b8a6',
+          backgroundColor: 'rgba(20, 184, 166, 0.12)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#14b8a6',
+          yAxisID: 'y'
+        },
+        // Primary Forecast Dashed Line
+        {
+          label: `${pBio.name} AI Forecast`,
+          data: primaryProjected,
+          borderColor: '#f59e0b',
+          borderDash: [5, 5],
+          tension: 0.35,
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointBackgroundColor: '#f59e0b',
+          yAxisID: 'y'
+        },
+        // Secondary Historical Line
+        {
+          label: sBio.name,
+          data: secondaryHistorical,
+          borderColor: '#38bdf8',
+          borderWidth: 1.8,
+          pointRadius: 3,
+          pointBackgroundColor: '#38bdf8',
+          tension: 0.35,
+          yAxisID: 'y1'
+        },
+        // Secondary Forecast Line
+        {
+          label: `${sBio.name} AI Forecast`,
+          data: secondaryProjected,
+          borderColor: '#38bdf8',
+          borderDash: [4, 4],
+          borderWidth: 1.8,
+          pointRadius: 4,
+          pointBackgroundColor: '#38bdf8',
+          tension: 0.35,
+          yAxisID: 'y1'
+        },
+        // Threshold Horizontal Reference
+        {
+          label: 'Clinical Threshold',
+          data: thresholdLine,
+          borderColor: 'rgba(239, 68, 68, 0.75)',
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          yAxisID: 'y'
+        }
+      ];
+
+      longitudinalChartInstance.update();
+    }
+
+    /* ========================================================
+       MODULE A: SMART LAB REPORT OCR SIMULATOR
+       ======================================================== */
+    function triggerSimulatedOCR() {
+      const dropzone = document.getElementById('ocrDropzone');
+      const normalState = document.getElementById('ocrNormalState');
+      const scanState = document.getElementById('ocrScanningState');
+      const laser = document.getElementById('ocrLaser');
+      const pBar = document.getElementById('ocrProgressBar');
+      const statusText = document.getElementById('ocrStatusText');
+      const badge = document.getElementById('ocrSuccessBadge');
+
+      normalState.classList.add('hidden');
+      scanState.classList.remove('hidden');
+      scanState.classList.add('flex');
+      laser.classList.remove('hidden');
+      badge.classList.add('hidden');
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 18;
+        pBar.style.width = `${progress}%`;
+
+        if (progress === 36) {
+          statusText.textContent = 'Binarizing image & deskewing table grid...';
+        } else if (progress === 72) {
+          statusText.textContent = 'Extracting biomarker numerical entities & units...';
+        } else if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            laser.classList.add('hidden');
+            scanState.classList.add('hidden');
+            scanState.classList.remove('flex');
+            normalState.classList.remove('hidden');
+            badge.classList.remove('hidden');
+            
+            // Randomize slightly for realistic simulation if on current preset
+            APP_STATE.biomarkers.hba1c.current = parseFloat((APP_STATE.biomarkers.hba1c.current + (Math.random() * 0.1 - 0.05)).toFixed(1));
+            APP_STATE.biomarkers.glucose.current = Math.round(APP_STATE.biomarkers.glucose.current + (Math.random() * 4 - 2));
+            
+            renderBiomarkerInputs();
+            recalculateAllRisks();
+          }, 400);
+        }
+      }, 200);
+    }
+
+    function loadSampleReport(type) {
+      if (type === 'quest') {
+        loadPatientPreset('A');
+      } else {
+        loadPatientPreset('B');
+      }
+      triggerSimulatedOCR();
+    }
+
+    /* ========================================================
+       MODULE C: COMPUTER VISION EYELID & NAIL SCREENER
+       ======================================================== */
+    const cvImage = new Image();
+    const cvCanvas = document.getElementById('visionCanvas');
+    const cvCtx = cvCanvas.getContext('2d');
+
+    const CV_ASSETS = {
+      pale: './assets/conjunctiva_pale.jpg',
+      healthy: './assets/conjunctiva_healthy.jpg',
+      nail: './assets/nail_bed_sample.jpg'
+    };
+
+    function loadVisionSample(sampleKey) {
+      APP_STATE.vision.activeSample = sampleKey;
+      
+      // Update Tab Buttons
+      ['pale', 'healthy', 'nail'].forEach(s => {
+        const btn = document.getElementById(`btnSample${s.charAt(0).toUpperCase() + s.slice(1)}`);
+        if (btn) {
+          if (s === sampleKey) {
+            btn.className = 'px-2 py-1 text-[11px] font-medium rounded bg-rose-900/60 text-rose-200 border border-rose-500/50 transition';
+          } else {
+            btn.className = 'px-2 py-1 text-[11px] font-medium rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+          }
+        }
+      });
+
+      // Default ROI coordinates for each sample
+      if (sampleKey === 'pale') {
+        APP_STATE.vision.roi = { x: 120, y: 100, w: 90, h: 45 };
+      } else if (sampleKey === 'healthy') {
+        APP_STATE.vision.roi = { x: 130, y: 105, w: 95, h: 48 };
+      } else if (sampleKey === 'nail') {
+        APP_STATE.vision.roi = { x: 140, y: 70, w: 85, h: 55 };
+      }
+
+      cvImage.src = CV_ASSETS[sampleKey];
+      cvImage.onload = function() {
+        drawVisionCanvas();
+        sampleROIErythema();
+      };
+      cvImage.onerror = function() {
+        // Fallback procedural canvas rendering if asset path unavailable
+        renderFallbackMedicalPattern(sampleKey);
+      };
+    }
+
+    function handleVisionImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          cvImage.src = evt.target.result;
+          APP_STATE.vision.activeSample = 'custom';
+          cvImage.onload = function() {
+            drawVisionCanvas();
+            sampleROIErythema();
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function renderFallbackMedicalPattern(sampleKey) {
+      cvCtx.clearRect(0, 0, cvCanvas.width, cvCanvas.height);
+      const grad = cvCtx.createRadialGradient(cvCanvas.width/2, cvCanvas.height/2, 20, cvCanvas.width/2, cvCanvas.height/2, 180);
+      if (sampleKey === 'pale') {
+        grad.addColorStop(0, '#fcd34d');
+        grad.addColorStop(0.5, '#fed7aa');
+        grad.addColorStop(1, '#ca8a04');
+      } else {
+        grad.addColorStop(0, '#f43f5e');
+        grad.addColorStop(0.5, '#e11d48');
+        grad.addColorStop(1, '#881337');
+      }
+      cvCtx.fillStyle = grad;
+      cvCtx.fillRect(0, 0, cvCanvas.width, cvCanvas.height);
+      drawROIBox();
+      sampleROIErythema();
+    }
+
+    function drawVisionCanvas() {
+      cvCtx.clearRect(0, 0, cvCanvas.width, cvCanvas.height);
+      if (cvImage.complete && cvImage.naturalWidth > 0) {
+        cvCtx.drawImage(cvImage, 0, 0, cvCanvas.width, cvCanvas.height);
+      }
+      drawROIBox();
+    }
+
+    function drawROIBox() {
+      const roi = APP_STATE.vision.roi;
+
+      // Semi-transparent darkened mask outside ROI
+      cvCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      cvCtx.fillRect(0, 0, cvCanvas.width, roi.y); // top
+      cvCtx.fillRect(0, roi.y + roi.h, cvCanvas.width, cvCanvas.height - (roi.y + roi.h)); // bottom
+      cvCtx.fillRect(0, roi.y, roi.x, roi.h); // left
+      cvCtx.fillRect(roi.x + roi.w, roi.y, cvCanvas.width - (roi.x + roi.w), roi.h); // right
+
+      // ROI Neon Border
+      cvCtx.strokeStyle = '#2dd4bf';
+      cvCtx.lineWidth = 2;
+      cvCtx.setLineDash([4, 2]);
+      cvCtx.strokeRect(roi.x, roi.y, roi.w, roi.h);
+      cvCtx.setLineDash([]);
+
+      // Corner glow brackets
+      const bracketLen = 8;
+      cvCtx.strokeStyle = '#38bdf8';
+      cvCtx.lineWidth = 3;
+      
+      // Top-Left
+      cvCtx.beginPath();
+      cvCtx.moveTo(roi.x, roi.y + bracketLen);
+      cvCtx.lineTo(roi.x, roi.y);
+      cvCtx.lineTo(roi.x + bracketLen, roi.y);
+      cvCtx.stroke();
+
+      // Top-Right
+      cvCtx.beginPath();
+      cvCtx.moveTo(roi.x + roi.w - bracketLen, roi.y);
+      cvCtx.lineTo(roi.x + roi.w, roi.y);
+      cvCtx.lineTo(roi.x + roi.w, roi.y + bracketLen);
+      cvCtx.stroke();
+
+      // Bottom-Left
+      cvCtx.beginPath();
+      cvCtx.moveTo(roi.x, roi.y + roi.h - bracketLen);
+      cvCtx.lineTo(roi.x, roi.y + roi.h);
+      cvCtx.lineTo(roi.x + bracketLen, roi.y + roi.h);
+      cvCtx.stroke();
+
+      // Bottom-Right
+      cvCtx.beginPath();
+      cvCtx.moveTo(roi.x + roi.w - bracketLen, roi.y + roi.h);
+      cvCtx.lineTo(roi.x + roi.w, roi.y + roi.h);
+      cvCtx.lineTo(roi.x + roi.w, roi.y + roi.h - bracketLen);
+      cvCtx.stroke();
+    }
+
+    // Pixel Sampling for Erythema Index & Normalized Pallor
+    function sampleROIErythema() {
+      const roi = APP_STATE.vision.roi;
+      try {
+        const imgData = cvCtx.getImageData(roi.x, roi.y, roi.w, roi.h);
+        const data = imgData.data;
+
+        let totalR = 0, totalG = 0, totalB = 0;
+        const pixelCount = roi.w * roi.h;
+
+        for (let i = 0; i < data.length; i += 4) {
+          totalR += data[i];
+          totalG += data[i + 1];
+          totalB += data[i + 2];
+        }
+
+        const avgR = totalR / pixelCount;
+        const avgG = totalG / pixelCount;
+        const avgB = totalB / pixelCount;
+
+        // Erythema Index: log10(R) - log10(G)
+        const safeR = Math.max(1, avgR);
+        const safeG = Math.max(1, avgG);
+        const ei = Math.log10(safeR) - Math.log10(safeG);
+        const rgRatio = safeR / safeG;
+
+        // In vascular tissue, high erythema (EI ~ 0.22+) = low pallor (pink).
+        // In ischemic/anemic tissue, low erythema (EI ~ 0.05-0.10) = high pallor.
+        let pallor = Math.round((0.26 - ei) * 380);
+        pallor = Math.max(12, Math.min(94, pallor));
+
+        APP_STATE.vision.erythemaIndex = parseFloat(ei.toFixed(3));
+        APP_STATE.vision.rgRatio = parseFloat(rgRatio.toFixed(2));
+        APP_STATE.vision.pallorScore = pallor;
+
+        // Update DOM readouts
+        document.getElementById('erythemaIndexVal').textContent = ei.toFixed(3);
+        document.getElementById('rgRatioVal').textContent = rgRatio.toFixed(2);
+        
+        const pallorTier = pallor > 60 ? 'High' : (pallor > 35 ? 'Moderate' : 'Normal');
+        document.getElementById('visionScoreVal').textContent = `${pallor}% (${pallorTier})`;
+        document.getElementById('cvRiskBadge').textContent = `Pallor: ${pallor}%`;
+        document.getElementById('roiCoordinatesLabel').textContent = `${roi.x}, ${roi.y} (${roi.w}x${roi.h})`;
+
+        // Recompute risks with newly sampled vision score
+        recalculateAllRisks();
+      } catch (err) {
+        console.warn('Canvas pixel sampling restricted or error:', err);
+      }
+    }
+
+    // Interactive ROI Dragging on Canvas
+    cvCanvas.addEventListener('mousedown', (e) => {
+      const rect = cvCanvas.getBoundingClientRect();
+      const scaleX = cvCanvas.width / rect.width;
+      const scaleY = cvCanvas.height / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+
+      const roi = APP_STATE.vision.roi;
+      if (mouseX >= roi.x && mouseX <= roi.x + roi.w && mouseY >= roi.y && mouseY <= roi.y + roi.h) {
+        APP_STATE.vision.isDragging = true;
+        APP_STATE.vision.dragStart = { x: mouseX - roi.x, y: mouseY - roi.y };
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!APP_STATE.vision.isDragging) return;
+      const rect = cvCanvas.getBoundingClientRect();
+      const scaleX = cvCanvas.width / rect.width;
+      const scaleY = cvCanvas.height / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+
+      let newX = mouseX - APP_STATE.vision.dragStart.x;
+      let newY = mouseY - APP_STATE.vision.dragStart.y;
+
+      newX = Math.max(0, Math.min(cvCanvas.width - APP_STATE.vision.roi.w, newX));
+      newY = Math.max(0, Math.min(cvCanvas.height - APP_STATE.vision.roi.h, newY));
+
+      APP_STATE.vision.roi.x = Math.round(newX);
+      APP_STATE.vision.roi.y = Math.round(newY);
+
+      drawVisionCanvas();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (APP_STATE.vision.isDragging) {
+        APP_STATE.vision.isDragging = false;
+        sampleROIErythema();
+      }
+    });
+
+    // Touch Support for Mobile / Tablet Demonstration
+    cvCanvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = cvCanvas.getBoundingClientRect();
+        const mouseX = (touch.clientX - rect.left) * (cvCanvas.width / rect.width);
+        const mouseY = (touch.clientY - rect.top) * (cvCanvas.height / rect.height);
+        const roi = APP_STATE.vision.roi;
+        if (mouseX >= roi.x && mouseX <= roi.x + roi.w && mouseY >= roi.y && mouseY <= roi.y + roi.h) {
+          APP_STATE.vision.isDragging = true;
+          APP_STATE.vision.dragStart = { x: mouseX - roi.x, y: mouseY - roi.y };
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
+
+    cvCanvas.addEventListener('touchmove', (e) => {
+      if (APP_STATE.vision.isDragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = cvCanvas.getBoundingClientRect();
+        const mouseX = (touch.clientX - rect.left) * (cvCanvas.width / rect.width);
+        const mouseY = (touch.clientY - rect.top) * (cvCanvas.height / rect.height);
+
+        let newX = Math.max(0, Math.min(cvCanvas.width - APP_STATE.vision.roi.w, mouseX - APP_STATE.vision.dragStart.x));
+        let newY = Math.max(0, Math.min(cvCanvas.height - APP_STATE.vision.roi.h, mouseY - APP_STATE.vision.dragStart.y));
+
+        APP_STATE.vision.roi.x = Math.round(newX);
+        APP_STATE.vision.roi.y = Math.round(newY);
+
+        drawVisionCanvas();
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    cvCanvas.addEventListener('touchend', () => {
+      if (APP_STATE.vision.isDragging) {
+        APP_STATE.vision.isDragging = false;
+        sampleROIErythema();
+      }
+    });
+
+    /* ========================================================
+       DATA EXPORT (JSON & PRINT TIMESTAMP)
+       ======================================================== */
+    function downloadTriageJSON() {
+      const exportData = {
+        metadata: {
+          system: 'ChronoPulse AI Triage Decision Support',
+          version: '2.4-Hackathon',
+          timestamp: new Date().toISOString(),
+          piiMasked: APP_STATE.isPiiMasked,
+          patientToken: APP_STATE.isPiiMasked ? APP_STATE.patientInfo.maskedToken : APP_STATE.patientInfo.unmaskedName
+        },
+        biomarkerHistory: APP_STATE.biomarkers,
+        visionScreening: APP_STATE.vision,
+        multimodalRisks: APP_STATE.risks,
+        clinicianNotes: document.getElementById('clinicianNotesInput').value
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ChronoPulse_Triage_${APP_STATE.isPiiMasked ? 'CP-8841' : 'Patient'}_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ========================================================
+       APP INITIALIZATION
+       ======================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set current date in print header
+      const pTime = document.getElementById('printTimestamp');
+      if (pTime) pTime.textContent = `Report Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+
+      // Initialize components
+      renderBiomarkerInputs();
+      initLongitudinalChart();
+      loadPatientPreset('A'); // Load default pre-diabetic patient
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
