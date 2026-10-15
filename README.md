@@ -99,13 +99,16 @@ Simply double-click `index.html` or open it in any modern browser (Chrome, Edge,
 All ML simulations, charts, presets, and computer vision canvas tools operate client-side.
 
 ### Option 2: Python Flask Server Run
-To run the full backend blueprint with REST API endpoints:
+To run the security-hardened backend blueprint with REST API endpoints:
 
 ```bash
 # 1. Install dependencies
-pip install flask flask-cors
+pip install -r requirements.txt
 
-# 2. Launch the backend server
+# 2. (Optional) Configure environment variables
+cp .env.example .env
+
+# 3. Launch the backend server
 python app.py
 ```
 

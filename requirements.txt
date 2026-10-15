@@ -1,0 +1,11 @@
+# Core Web Framework & API Microservices
+Flask>=2.3.0
+flask-cors>=4.0.0
+Werkzeug>=2.3.0
+
+# Environment & Secrets Management
+python-dotenv>=1.0.0
+
+# Optional Production WSGI Server (Recommended for deployment)
+gunicorn>=21.0.0; sys_platform != "win32"
+waitress>=2.1.2; sys_platform == "win32"

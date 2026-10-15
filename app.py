@@ -7,10 +7,16 @@ This production-grade blueprint provides three core clinical AI microservices:
 2. POST /api/predict-risk  - Longitudinal slope velocity + gradient-boosted disease risk & SHAP
 3. POST /api/vision-pallor - Computer vision colorimetry for palpebral conjunctiva/nail bed pallor
 
-To run this backend:
-    pip install flask flask-cors
-    python app.py
-Access the app at: http://127.0.0.1:5000
+Security Hardened for Hackathon & Clinical Deployment:
+- Environment variable configuration (.env support with zero-dependency fallback)
+- API keys, credentials, and secrets kept out of version control
+- Configurable, restricted CORS policies
+- Strict HTTP Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, etc.)
+- File upload validation (type whitelisting, size restrictions, filename sanitization)
+- Safe input sanitization and boundary clamping (prevents DoS, math overflows, injection)
+- Directory traversal protection on static asset serving
+- Sanitized global error handlers (no sensitive stack traces leaked to clients)
+- Safe-by-default server binding (127.0.0.1, debug disabled in production)
 """
 
 import os
@@ -19,17 +25,182 @@ import time
 import base64
 import io
 import re
+import secrets
 from typing import Dict, Any, List, Optional
 from flask import Flask, request, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
+
+# ============================================================================
+# ENVIRONMENT & SECRETS CONFIGURATION
+# ============================================================================
+def load_env_file(filepath: str = ".env") -> None:
+    """
+    Lightweight fallback loader for .env key-value pairs if python-dotenv
+    is not installed in the current environment.
+    """
+    try:
+        # pyrefly: ignore [missing-import]
+        from dotenv import load_dotenv 
+        load_dotenv(filepath)
+        return
+    except ImportError:
+        pass
+
+    if not os.path.exists(filepath):
+        return
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+    except Exception:
+        pass
+
+# Automatically load local .env if present
+load_env_file()
 
 app = Flask(__name__, static_folder=".")
 
-# Optional CORS setup (if frontend is hosted on separate Vite/React port)
+# Application Secret Key (Used for session signing and CSRF tokens)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", secrets.token_hex(32))
+
+# Enforce 16 MB maximum payload limit to prevent memory exhaustion DoS
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", str(16 * 1024 * 1024)))
+
+# ============================================================================
+# CORS CONFIGURATION (Configurable & Restricted)
+# ============================================================================
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_env.strip():
+    origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+else:
+    # Default to safe local origins for hackathon development
+    origins = [
+        "http://127.0.0.1:5000",
+        "http://localhost:5000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080"
+    ]
+
 try:
     from flask_cors import CORS
-    CORS(app)
+    CORS(app, origins=origins, supports_credentials=True)
 except ImportError:
     pass
+
+
+# ============================================================================
+# HTTP SECURITY HEADERS & DEFENSIVE MIDDLEWARE
+# ============================================================================
+@app.after_request
+def apply_security_headers(response):
+    """Applies modern HTTP security headers to protect against common web attacks."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    
+    # Content Security Policy (allows local assets, Google Fonts, and project CDNs)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self' http://127.0.0.1:* http://localhost:*; "
+        "frame-ancestors 'self';"
+    )
+    return response
+
+
+# ============================================================================
+# GLOBAL SANITIZED ERROR HANDLERS (No Stack Leaks)
+# ============================================================================
+@app.errorhandler(400)
+def handle_bad_request(e):
+    return jsonify({
+        "status": "error",
+        "message": "Bad request",
+        "detail": str(e.description) if hasattr(e, "description") and app.debug else "Invalid input parameters."
+    }), 400
+
+@app.errorhandler(404)
+def handle_not_found(e):
+    return jsonify({
+        "status": "error",
+        "message": "The requested resource was not found."
+    }), 404
+
+@app.errorhandler(413)
+def handle_payload_too_large(e):
+    return jsonify({
+        "status": "error",
+        "message": "Payload exceeds maximum allowed size (16 MB)."
+    }), 413
+
+@app.errorhandler(500)
+def handle_internal_error(e):
+    # Log securely on server without disclosing internals to client
+    app.logger.error(f"Internal Server Error: {e}")
+    return jsonify({
+        "status": "error",
+        "message": "An internal server error occurred. Please contact the administrator."
+    }), 500
+
+
+# ============================================================================
+# INPUT SANITIZATION & BOUNDS VALIDATION HELPERS
+# ============================================================================
+ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "webp", "tiff"}
+
+def allowed_file(filename: str) -> bool:
+    """Verifies that an uploaded file matches the strict extension whitelist."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def sanitize_numeric(val: Any, default: float, min_val: float = 0.0, max_val: float = 2000.0) -> float:
+    """
+    Sanitizes numeric inputs against NaN, Infinity, type mismatches, and clamps
+    values to safe physiological ranges to prevent math overflow or DoS.
+    """
+    try:
+        num = float(val)
+        if math.isnan(num) or math.isinf(num):
+            return default
+        return max(min_val, min(max_val, num))
+    except (ValueError, TypeError):
+        return default
+
+def calculate_velocity(t12: float, t6: float, current: float) -> float:
+    """
+    Calculates weighted composite slope velocity per month over a 12-month window.
+    Applies 60% weighting to recent 6-month trajectory and 40% to overall 12-month slope.
+    Clamps velocity to physiological bounds (-500 to +500).
+    """
+    v6 = (current - t6) / 6.0
+    v12 = (current - t12) / 12.0
+    velocity = (0.6 * v6) + (0.4 * v12)
+    return max(-500.0, min(500.0, velocity))
+
+def sigmoid(z: float) -> float:
+    """Numerically stable sigmoid function to prevent math overflow errors."""
+    if z < -700.0:
+        return 0.0
+    elif z > 700.0:
+        return 1.0
+    try:
+        return 1.0 / (1.0 + math.exp(-z))
+    except OverflowError:
+        return 0.0 if z < 0 else 1.0
 
 
 # ============================================================================
@@ -54,10 +225,24 @@ def parse_ocr():
     """
     start_time = time.time()
     
-    # Check for file or json payload
     file = request.files.get("file")
     payload = request.get_json(silent=True) or {}
-    panel_type = request.form.get("panel_type") or payload.get("panel_type", "cmp_cbc")
+    
+    # Validate and sanitize file upload if present
+    safe_doc_name = "uploaded_sample.pdf"
+    if file and file.filename:
+        if not allowed_file(file.filename):
+            return jsonify({
+                "status": "error",
+                "message": f"File type not permitted. Allowed extensions: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+            }), 400
+        safe_doc_name = secure_filename(file.filename) or "uploaded_sample.pdf"
+
+    # Sanitize panel_type parameter against injection
+    raw_panel_type = request.form.get("panel_type") or payload.get("panel_type", "cmp_cbc")
+    panel_type = str(raw_panel_type)[:32]
+    if not re.match(r"^[a-zA-Z0-9_\-]+$", panel_type):
+        panel_type = "cmp_cbc"
 
     # Mock extracted results based on clinical patterns
     # In production, pass bytes to OCR and run regex entity matching:
@@ -65,8 +250,9 @@ def parse_ocr():
     mock_extracted = {
         "status": "success",
         "processing_time_ms": round((time.time() - start_time) * 1000 + 450, 2),
-        "source_document": file.filename if file else "uploaded_sample.pdf",
+        "source_document": safe_doc_name,
         "confidence_score": 0.984,
+        "panel_type": panel_type,
         "extracted_biomarkers": {
             "hba1c": {"value": 6.3, "unit": "%", "ref_interval": "< 5.7%", "flag": "HIGH"},
             "glucose": {"value": 122, "unit": "mg/dL", "ref_interval": "70-99", "flag": "HIGH"},
@@ -91,73 +277,44 @@ def parse_ocr():
 # ============================================================================
 # CLINICAL AI SERVICE 2: MULTI-MODAL DISEASE RISK & SHAP (/api/predict-risk)
 # ============================================================================
-def calculate_velocity(t12: float, t6: float, current: float) -> float:
-    """
-    Calculates weighted composite slope velocity per month over a 12-month window.
-    Applies 60% weighting to recent 6-month trajectory and 40% to overall 12-month slope.
-    """
-    v6 = (current - t6) / 6.0
-    v12 = (current - t12) / 12.0
-    return (0.6 * v6) + (0.4 * v12)
-
-def sigmoid(z: float) -> float:
-    return 1.0 / (1.0 + math.exp(-z))
-
 @app.route("/api/predict-risk", methods=["POST"])
 def predict_risk():
     """
     Calculates 6-12 month disease progression risk and explainable SHAP drivers.
-    
-    Expected JSON Body:
-    {
-        "biomarkers": {
-            "hba1c": {"t12": 5.6, "t6": 6.0, "current": 6.3},
-            "glucose": {"t12": 94, "t6": 108, "current": 122},
-            "hemoglobin": {"t12": 13.8, "t6": 13.2, "current": 12.9},
-            "ferritin": {"t12": 85, "t6": 58, "current": 42},
-            "creatinine": {"t12": 0.85, "t6": 0.98, "current": 1.15},
-            "egfr": {"t12": 96, "t6": 84, "current": 72},
-            "sbp": {"t12": 124, "t6": 130, "current": 138},
-            "bmi": {"t12": 27.2, "t6": 28.1, "current": 29.0}
-        },
-        "vision_pallor_score": 68.0,
-        "selected_track": "t2d" // optional
-    }
-    
-    Production XGBoost / LightGBM Hook:
-        # Load serialized model:
-        # import xgboost as xgb
-        # bst = xgb.Booster({'nthread': 4})
-        # bst.load_model("models/t2d_progression_xgb.json")
-        # dtest = xgb.DMatrix(feature_vector)
-        # prob = bst.predict(dtest)[0]
-        #
-        # TreeSHAP calculation:
-        # import shap
-        # explainer = shap.TreeExplainer(bst)
-        # shap_values = explainer.shap_values(feature_vector)
+    Includes strict input bounds sanitization against malformed data.
     """
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({
+            "status": "error",
+            "message": "Invalid request. JSON body must be an object."
+        }), 400
+
     biomarkers = data.get("biomarkers", {})
-    vision_pallor = float(data.get("vision_pallor_score", 30.0))
+    if not isinstance(biomarkers, dict):
+        biomarkers = {}
+
+    vision_pallor = sanitize_numeric(data.get("vision_pallor_score", 30.0), default=30.0, min_val=0.0, max_val=100.0)
     
-    # Safe retrieval helpers
-    def get_bio(key, default_t12, default_t6, default_cur):
+    # Safe bounded biomarker retrieval helpers
+    def get_bio(key: str, default_t12: float, default_t6: float, default_cur: float, min_val: float = 0.0, max_val: float = 1000.0):
         item = biomarkers.get(key, {})
+        if not isinstance(item, dict):
+            item = {}
         return (
-            float(item.get("t12", default_t12)),
-            float(item.get("t6", default_t6)),
-            float(item.get("current", default_cur))
+            sanitize_numeric(item.get("t12"), default_t12, min_val, max_val),
+            sanitize_numeric(item.get("t6"), default_t6, min_val, max_val),
+            sanitize_numeric(item.get("current"), default_cur, min_val, max_val)
         )
         
-    a1c_12, a1c_6, a1c_cur = get_bio("hba1c", 5.6, 6.0, 6.3)
-    glu_12, glu_6, glu_cur = get_bio("glucose", 94, 108, 122)
-    hb_12, hb_6, hb_cur = get_bio("hemoglobin", 13.8, 13.2, 12.9)
-    fer_12, fer_6, fer_cur = get_bio("ferritin", 85, 58, 42)
-    cr_12, cr_6, cr_cur = get_bio("creatinine", 0.85, 0.98, 1.15)
-    egfr_12, egfr_6, egfr_cur = get_bio("egfr", 96, 84, 72)
-    sbp_12, sbp_6, sbp_cur = get_bio("sbp", 124, 130, 138)
-    bmi_12, bmi_6, bmi_cur = get_bio("bmi", 27.2, 28.1, 29.0)
+    a1c_12, a1c_6, a1c_cur = get_bio("hba1c", 5.6, 6.0, 6.3, 2.0, 25.0)
+    glu_12, glu_6, glu_cur = get_bio("glucose", 94, 108, 122, 20.0, 1000.0)
+    hb_12, hb_6, hb_cur = get_bio("hemoglobin", 13.8, 13.2, 12.9, 1.0, 30.0)
+    fer_12, fer_6, fer_cur = get_bio("ferritin", 85, 58, 42, 1.0, 3000.0)
+    cr_12, cr_6, cr_cur = get_bio("creatinine", 0.85, 0.98, 1.15, 0.1, 20.0)
+    egfr_12, egfr_6, egfr_cur = get_bio("egfr", 96, 84, 72, 1.0, 200.0)
+    sbp_12, sbp_6, sbp_cur = get_bio("sbp", 124, 130, 138, 50.0, 300.0)
+    bmi_12, bmi_6, bmi_cur = get_bio("bmi", 27.2, 28.1, 29.0, 10.0, 100.0)
     
     # 1. Slope Velocities (monthly rate of change)
     v_a1c = calculate_velocity(a1c_12, a1c_6, a1c_cur)
@@ -271,28 +428,25 @@ def vision_pallor():
     """
     Analyzes an eyelid palpebral conjunctiva or nail bed image region of interest (ROI).
     Computes Erythema Index (EI), Red/Green Ratio, and normalized Pallor Score.
-    
-    Expected JSON Body:
-    {
-        "roi": {"x": 90, "y": 110, "w": 75, "h": 45},
-        "sample_type": "pale" | "healthy" | "nail",
-        "image_base64": "...optional..."
-    }
-    
-    OpenCV Implementation Guide:
-        # import cv2
-        # import numpy as np
-        # nparr = np.frombuffer(base64.b64decode(b64_str), np.uint8)
-        # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        # roi_crop = img[y:y+h, x:x+w]
-        # b, g, r = cv2.split(roi_crop)
-        # mean_r = np.mean(r)
-        # mean_g = np.mean(g)
-        # ei = np.log10(mean_r + 1e-5) - np.log10(mean_g + 1e-5)
+    Includes bounds validation for image ROI coordinates.
     """
     payload = request.get_json(silent=True) or {}
-    roi = payload.get("roi", {"x": 90, "y": 110, "w": 75, "h": 45})
-    sample_type = payload.get("sample_type", "pale")
+    if not isinstance(payload, dict):
+        payload = {}
+        
+    raw_roi = payload.get("roi", {})
+    if not isinstance(raw_roi, dict):
+        raw_roi = {}
+
+    roi = {
+        "x": int(sanitize_numeric(raw_roi.get("x", 90), 90, 0, 4000)),
+        "y": int(sanitize_numeric(raw_roi.get("y", 110), 110, 0, 4000)),
+        "w": int(sanitize_numeric(raw_roi.get("w", 75), 75, 1, 4000)),
+        "h": int(sanitize_numeric(raw_roi.get("h", 45), 45, 1, 4000)),
+    }
+    
+    raw_sample = str(payload.get("sample_type", "pale")).lower()
+    sample_type = raw_sample if raw_sample in ("healthy", "nail", "pale") else "pale"
     
     if sample_type == "healthy":
         mean_r, mean_g, mean_b = 182.0, 98.0, 102.0
@@ -301,7 +455,7 @@ def vision_pallor():
     else:  # pale
         mean_r, mean_g, mean_b = 198.0, 168.0, 144.0
         
-    # Calculate colorimetry
+    # Calculate colorimetry safely
     ei = math.log10(max(1.0, mean_r)) - math.log10(max(1.0, mean_g))
     rg_ratio = mean_r / max(1.0, mean_g)
     
@@ -327,27 +481,49 @@ def vision_pallor():
 
 
 # ============================================================================
-# STATIC WEB APPLICATION SERVING
+# STATIC WEB APPLICATION SERVING (With Path Traversal Protection)
 # ============================================================================
 @app.route("/")
 def index():
     """Serves the primary single-page frontend application."""
-    return send_from_directory(".", "index.html")
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return send_from_directory(base_dir, "index.html")
 
 @app.route("/assets/<path:filename>")
 def serve_assets(filename):
-    """Serves clinical images and sample test reports."""
-    return send_from_directory("assets", filename)
+    """
+    Serves clinical images and sample test reports with strict path traversal protection.
+    Prevents directory climbing attacks (e.g., ../../).
+    """
+    assets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
+    safe_path = os.path.abspath(os.path.join(assets_dir, filename))
+    
+    # Guardrail: Ensure target path is strictly within the assets directory
+    if not safe_path.startswith(assets_dir) or not os.path.isfile(safe_path):
+        return jsonify({"status": "error", "message": "Asset not found"}), 404
+        
+    return send_from_directory(assets_dir, filename)
 
 
+# ============================================================================
+# SERVER ENTRY POINT (Hardened & Environment Driven)
+# ============================================================================
 if __name__ == "__main__":
+    # Security: Default to local loopback (127.0.0.1) and debug=False in production
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() in ("true", "1", "yes")
+    host = os.getenv("HOST", "127.0.0.1")
+    try:
+        port = int(os.getenv("PORT", "5000"))
+    except ValueError:
+        port = 5000
+
     print("=" * 70)
     print(" CHRONOPULSE AI - CLINICAL DECISION SUPPORT SERVER")
     print(" Early Disease-Risk Prediction & Longitudinal Lab Profiler")
     print("=" * 70)
-    print(" * Local Dev URL:     http://127.0.0.1:5000")
-    print(" * OCR Endpoint:      POST http://127.0.0.1:5000/api/parse-ocr")
-    print(" * Risk/SHAP API:     POST http://127.0.0.1:5000/api/predict-risk")
-    print(" * Vision Screener:   POST http://127.0.0.1:5000/api/vision-pallor")
+    print(f" * Server Bind:       http://{host}:{port}")
+    print(f" * Debug Mode:        {debug_mode} (Hardened: {not debug_mode})")
+    print(f" * Security Headers:  Active (CSP, X-Content-Type, X-Frame-Options)")
+    print(f" * Upload Guardrail:  Max payload {app.config['MAX_CONTENT_LENGTH'] // (1024*1024)} MB")
     print("=" * 70)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host=host, port=port, debug=debug_mode)
